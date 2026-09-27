@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Two-State Time Evolution</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Audiowide&family=Exo+2:wght@400;500;600;700;800&display=swap');
+    :root{
+      --ftr:56px;
+      --panel-grad: linear-gradient(160deg,#dde0e4 0%,#c8cdd2 20%,#b8bec4 40%,#caced2 60%,#b8bfc4 80%,#c0c6cc 100%);
+      --card-grad: linear-gradient(170deg,#ccd0d5 0%,#b8bec4 40%,#c2c8ce 100%);
+      --btn-grad: linear-gradient(180deg,#d4d9de 0%,#bcc3ca 50%,#acb4bc 100%);
+      --btn-grad-hover: linear-gradient(180deg,#dce2e8 0%,#c4ccd2 50%,#b4bcc4 100%);
+      --accent-grad: linear-gradient(145deg,#5a70e8 0%,#3a4fc8 50%,#2a3aaa 100%);
+      --accent-grad-hover: linear-gradient(145deg,#6a80f8 0%,#4a5fd8 50%,#3a4aba 100%);
+      --active-grad: linear-gradient(180deg,#3a5a9a 0%,#2a4080 60%,#1e3070 100%);
+      --ink:#1e2830; --ink-soft:#3a4858;
+    }
+    body {
+        margin: 0; padding: 20px; font-family: 'Orbitron', sans-serif;
+        background: linear-gradient(135deg, #eff6ff, #eef2ff); display: flex; flex-direction: column;
+        justify-content: flex-start; align-items: center; min-height: 100vh;
+    }
+    /* EDIT 5: wrapper sizes to its content so header/footer match the panels exactly */
+    #appWrap { display:flex; flex-direction:column; width:fit-content; max-width:100%; }
+    #pageTitleBanner .title-emoji {
+        background: radial-gradient(ellipse 80px 200% at center, #3a3f45 0%, #5a6068 40%, transparent 70%);
+        padding: 0 8px; margin: 0 2px; border-radius: 50%;
+    }
+    #titleRow { display:flex; flex-direction:row; align-items:stretch; width:100%; gap:10px; box-sizing:border-box; }
+    #pageTitleBanner {
+        flex:1 1 auto; background: var(--panel-grad);
+        color:var(--ink); font-family:'Audiowide', cursive; font-size:32px !important; font-weight:400;
+        letter-spacing:0.06em; text-align:center; padding:13px 20px; text-transform:uppercase;
+        border-radius:14px;
+        border-top:2px solid #eaeef0; border-left:2px solid #e0e4e6;
+        border-right:2px solid #8a9098; border-bottom:3px solid #78808a;
+        text-shadow:0 1px 2px rgba(255,255,255,0.9), 0 -1px 0 rgba(0,0,0,0.2);
+        box-shadow:0 0 0 1px rgba(255,255,255,0.6) inset, 0 8px 28px rgba(0,0,0,0.28), 0 3px 10px rgba(0,0,0,0.18);
+        box-sizing:border-box;
+    }
+    #infoBoxHeader {
+        flex:0 0 330px; background: var(--panel-grad); padding:8px; box-sizing:border-box;
+        border-top:2px solid #eaeef0; border-left:2px solid #e0e4e6;
+        border-right:2px solid #8a9098; border-bottom:3px solid #78808a;
+        border-radius:14px;
+        box-shadow:0 0 0 1px rgba(255,255,255,0.6) inset, 0 8px 28px rgba(0,0,0,0.28), 0 3px 10px rgba(0,0,0,0.18);
+        display:flex; align-items:stretch; justify-content:center;
+    }
+    #infoBtnHeader {
+        width:100%; background: var(--accent-grad); color:white; cursor:pointer;
+        border-top:1px solid rgba(255,255,255,0.35); border-left:1px solid rgba(255,255,255,0.25);
+        border-right:1px solid rgba(0,0,0,0.45); border-bottom:2px solid rgba(0,0,0,0.55);
+        border-radius:9px; padding:10px 20px; font-size:19px; font-weight:800; font-family:'Exo 2', sans-serif;
+        letter-spacing:0.04em; box-shadow:0 4px 12px rgba(60,80,200,0.45), 0 1px 0 rgba(255,255,255,0.2) inset;
+        text-shadow:0 1px 2px rgba(0,0,0,0.5); transition:all 0.1s;
+    }
+    #infoBtnHeader:hover { background: var(--accent-grad-hover); }
+    #infoBtnHeader:active { transform:translateY(1px); }
+    .container {
+        display:flex; flex-wrap:wrap; justify-content:center; gap:12px; background:transparent; padding:10px 0 0 0;
+        align-items:flex-start; box-sizing:border-box; width:100%;
+    }
+    .canvas-container {
+        position:relative; flex:0 1 840px; min-width:280px; max-width:840px;
+        padding:16px; border-radius:12px; background:var(--panel-grad);
+        border-top:2px solid #eaecee; border-left:2px solid #e2e6e8;
+        border-right:3px solid #7a8288; border-bottom:3px solid #72787e;
+        box-shadow:0 0 0 1px rgba(255,255,255,0.55) inset, 0 8px 32px rgba(0,0,0,0.35), 0 3px 10px rgba(0,0,0,0.2);
+        box-sizing:border-box;
+    }
+    canvas#chargeCanvas { border:1px solid #333; background:#0c1220; border-radius:6px; display:block;
+        width:100%; height:auto; max-width:840px; touch-action:none;
+        box-shadow:0 2px 8px rgba(0,0,0,0.25) inset, 0 1px 2px rgba(0,0,0,0.15); }
+    .canvas-hint { margin-top:8px; font-size:11px; color:var(--ink-soft); text-align:center; font-family:'Exo 2', sans-serif; }
+    .zoom-control-row { display:flex; align-items:flex-end; gap:10px; margin-top:10px; flex-wrap:wrap; justify-content:center; }
+    #panToolBtn { flex:0 0 auto; width:auto; padding:9px 14px; }
+    #graphPanel canvas { display:block; width:100%; background:#0c1220; border:1px solid #7a8288; border-radius:6px; cursor:zoom-in;
+        box-shadow:0 2px 6px rgba(0,0,0,0.25) inset; }
+    #graphPanel canvas:hover { border-color:#3a5a9a; }
+    .graph-note { margin-top:6px; font-size:10px; line-height:1.4; color:var(--ink-soft); font-family:'Exo 2', sans-serif; }
+    .panel-title {
+        display:block; text-align:left; font-weight:800; font-size:1.05rem; letter-spacing:0.06em; color:#1a3a6a;
+        text-transform:uppercase; margin-bottom:8px; padding:0;
+        text-shadow:0 1px 1px rgba(255,255,255,0.85), 0 -1px 0 rgba(0,0,0,0.2);
+    }
+    .left-panel { width:340px; flex:0 1 340px; min-width:280px; display:flex; flex-direction:column; gap:10px;
+        padding:10px 8px; border-radius:14px; background:var(--panel-grad);
+        border-top:2px solid #eaeef0; border-left:2px solid #e0e4e6;
+        border-right:2px solid #8a9098; border-bottom:3px solid #78808a;
+        box-shadow:0 0 0 1px rgba(255,255,255,0.6) inset, 0 12px 40px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+        box-sizing:border-box;
+    }
+    .control-panel { width:330px; flex:0 1 330px; min-width:280px; display:flex; flex-direction:column; gap:10px;
+        padding:10px 8px; border-radius:14px; background:var(--panel-grad);
+        border-top:2px solid #eaeef0; border-left:2px solid #e0e4e6;
+        border-right:2px solid #8a9098; border-bottom:3px solid #78808a;
+        box-shadow:0 0 0 1px rgba(255,255,255,0.6) inset, 0 12px 40px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+        box-sizing:border-box;
+    }
+    .control-group {
+        background:var(--card-grad); padding:8px 10px 9px; border-radius:9px;
+        border-top:1px solid #9ea6ac; border-left:1px solid #a8b0b6;
+        border-right:1px solid #d8dee2; border-bottom:2px solid #d0d8dc;
+        box-shadow:0 2px 4px rgba(0,0,0,0.18) inset, 0 1px 0 rgba(255,255,255,0.65) inset, 0 3px 8px rgba(0,0,0,0.15);
+    }
+    .slider-control { margin-bottom:2px; }
+    .slider-control label {
+        display:block; margin-bottom:3px; font-size:14.3px; color:var(--ink); font-weight:700; font-family:'Exo 2', sans-serif;
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-shadow:0 1px 0 rgba(255,255,255,0.7);
+    }
+    .slider-row { display:flex; align-items:center; gap:4px; }
+    .num-charges-ticks {
+        display:flex; justify-content:space-between; padding:0 5px; margin-top:1px;
+        font-family:'Exo 2', sans-serif; font-size:10px; font-weight:800; color:var(--ink-soft);
+        pointer-events:none; user-select:none;
+    }
+    .slider-row input[type="range"] { flex:1; min-width:0; }
+    .step-btn {
+        flex-shrink:0; width:24px; height:24px; padding:0; border-radius:7px;
+        cursor:pointer; font-size:11px; font-weight:900; color:var(--ink); display:flex; align-items:center; justify-content:center;
+        line-height:1; user-select:none;
+        background:var(--btn-grad);
+        border-top:2px solid #e4e8ea; border-left:2px solid #d8dce0;
+        border-right:2px solid #888e96; border-bottom:2px solid #78808a;
+        box-shadow:0 2px 4px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.75) inset;
+        text-shadow:0 1px 1px rgba(255,255,255,0.85);
+        transition:all 0.1s;
+    }
+    .step-btn:hover { background:var(--btn-grad-hover); }
+    .step-btn:active { transform:translateY(1px); }
+    .slider-control input[type="range"] {
+        width:100%; margin:0; -webkit-appearance:none; appearance:none; height:6px;
+        background:linear-gradient(90deg,#888e96,#a0a8b0);
+        outline:none; border-radius:3px;
+        border-top:1px solid #686e76; border-bottom:1px solid #c0c8d0;
+        box-shadow:0 1px 3px rgba(0,0,0,0.25) inset;
+    }
+    .slider-control input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance:none; appearance:none; width:18px; height:18px; cursor:pointer;
+        border-radius:50%; margin-top:-6px;
+        background:radial-gradient(circle at 35% 35%,#eef2f6 0%,#ced6de 40%,#8e98a6 100%);
+        border-top:2px solid #eef2f8; border-left:2px solid #e0e8f0;
+        border-right:2px solid #585e68; border-bottom:2px solid #484e58;
+        box-shadow:0 3px 6px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.9) inset;
+    }
+    .slider-control input[type="range"]::-moz-range-thumb {
+        width:18px; height:18px; cursor:pointer; border-radius:50%;
+        background:radial-gradient(circle at 35% 35%,#eef2f6 0%,#ced6de 40%,#8e98a6 100%);
+        border:2px solid #585e68; box-shadow:0 3px 6px rgba(0,0,0,0.3);
+    }
+    .slider-control input[type="range"]::-webkit-slider-runnable-track { height:6px; border-radius:3px; background:transparent; }
+    .digital-display {
+        flex-shrink:0; height:24px; min-width:64px; border-radius:6px;
+        background:linear-gradient(170deg,#b8bec4 0%,#a8b0b8 100%);
+        display:flex; align-items:center; justify-content:flex-end; padding:0 6px;
+        box-shadow:0 2px 5px rgba(0,0,0,0.2) inset, 0 1px 0 rgba(255,255,255,0.5) inset;
+        font-family:'Audiowide','Orbitron',monospace;
+        font-size:12px; font-weight:700; color:var(--ink); letter-spacing:0.5px; white-space:nowrap;
+        text-shadow:0 1px 0 rgba(255,255,255,0.6);
+    }
+    .button-row { display:flex; flex-direction:row; gap:6px; }
+    .mag-display-wrap { min-width:52px; padding:0 4px; }
+    .mag-display-input {
+        background:transparent; border:none; outline:none; padding:0; margin:0;
+        font-family:inherit; font-size:inherit; font-weight:inherit; color:inherit; letter-spacing:inherit;
+        text-align:right; width:100%; cursor:text;
+    }
+    .mag-display-input:focus { background:rgba(255,255,255,0.4); border-radius:3px; box-shadow:0 0 0 1px rgba(60,110,220,0.5); }
+    button {
+        padding:9px; font-size:13px; cursor:pointer; font-weight:800;
+        font-family:'Exo 2', sans-serif; letter-spacing:0.03em; transition:all 0.1s ease;
+        border-radius:9px;
+        background:var(--btn-grad); color:var(--ink);
+        border-top:2px solid #e4e8ea; border-left:2px solid #d8dce0;
+        border-right:2px solid #888e96; border-bottom:3px solid #78808a;
+        box-shadow:0 3px 8px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.75) inset;
+        text-shadow:0 1px 1px rgba(255,255,255,0.85), 0 -1px 0 rgba(0,0,0,0.15);
+        position:relative; top:0;
+    }
+    .btn-primary { background: var(--accent-grad); color:#fff; flex:1; font-size:14px;
+        border-top:1px solid rgba(255,255,255,0.35); border-left:1px solid rgba(255,255,255,0.25);
+        border-right:1px solid rgba(0,0,0,0.45); border-bottom:2px solid rgba(0,0,0,0.55);
+        text-shadow:0 1px 2px rgba(0,0,0,0.5);
+    }
+    .btn-primary:hover { background: var(--accent-grad-hover); top:-1px; }
+    .btn-secondary { background: var(--btn-grad); color:var(--ink); flex:1; }
+    #resetBtn { font-size:14px; }
+    .btn-secondary:hover { background: var(--btn-grad-hover); top:-1px; }
+    .btn-secondary:active { top:2px; }
+    .btn-secondary.active-on {
+        background:var(--active-grad) !important; color:#e8f0ff !important;
+        border-top:1px solid rgba(100,160,255,0.4) !important; border-left:1px solid rgba(80,130,220,0.3) !important;
+        border-right:2px solid #0e1e50 !important; border-bottom:3px solid #0a1840 !important;
+        text-shadow:0 0 8px rgba(160,210,255,0.6), 0 1px 2px rgba(0,0,0,0.5) !important;
+        box-shadow:0 1px 3px rgba(0,0,0,0.5), 0 0 10px rgba(60,110,220,0.3) !important;
+    }
+    .btn-secondary:disabled { opacity:0.4; cursor:not-allowed; top:0; filter:grayscale(0.3); }
+    .btn-readouts {
+        width:100%; background: var(--accent-grad); color:#fff;
+        font-size:16px; letter-spacing:0.05em; padding:12px;
+        border-top:1px solid rgba(255,255,255,0.35); border-left:1px solid rgba(255,255,255,0.25);
+        border-right:1px solid rgba(0,0,0,0.45); border-bottom:2px solid rgba(0,0,0,0.55);
+        text-shadow:0 1px 2px rgba(0,0,0,0.5);
+    }
+    .btn-readouts:hover { background: var(--accent-grad-hover); top:-1px; }
+    /* EDIT 1: view mode selector */
+    .mode-selector { display:flex; width:100%; height:38px; border-radius:9px; overflow:hidden;
+        border-top:2px solid #e4e8ea; border-left:2px solid #d8dce0;
+        border-right:2px solid #888e96; border-bottom:3px solid #78808a;
+        box-shadow:0 2px 4px rgba(0,0,0,0.18) inset; }
+    .mode-opt {
+        flex:1; display:flex; align-items:center; justify-content:center; font-family:'Exo 2', sans-serif;
+        font-size:14px; font-weight:800; border:none; cursor:pointer; color:var(--ink); background:var(--btn-grad);
+        padding:0; height:100%; box-shadow:none; top:0; letter-spacing:0.05em;
+        text-shadow:0 1px 1px rgba(255,255,255,0.85);
+    }
+    .mode-opt.selected { background:var(--active-grad); color:#e8f0ff; text-shadow:0 0 8px rgba(160,210,255,0.6); }
+    .charge-block { border-radius:9px; padding:9px 10px; margin-bottom:9px;
+        border-top:1px solid #9ea6ac; border-left:1px solid #a8b0b6; border-bottom:2px solid #d0d8dc;
+        box-shadow:0 2px 4px rgba(0,0,0,0.15) inset, 0 1px 0 rgba(255,255,255,0.5) inset; }
+    .charge-block.pos { background:linear-gradient(170deg,#ffd9d9 0%,#f5b8b8 100%); border-right:2px solid #cc2222; }
+    .charge-block.neg { background:linear-gradient(170deg,#d6e4ff 0%,#b8cdf5 100%); border-right:2px solid #2255cc; }
+    .charge-block-header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; row-gap:6px; margin-bottom:7px; }
+    .charge-block-header .cname { font-family:'Exo 2', sans-serif; font-size:22.4px; font-weight:800; letter-spacing:0.04em; }
+    .charge-block.pos .cname { color:#8a1414; text-shadow:0 1px 0 rgba(255,255,255,0.6); }
+    .charge-block.neg .cname { color:#12297a; text-shadow:0 1px 0 rgba(255,255,255,0.6); }
+    .selector-pair { display:flex; align-items:center; gap:6px; }
+    .type-selector { display:flex; width:58px; height:28px; border-radius:7px; overflow:hidden;
+        border-top:2px solid #e4e8ea; border-left:2px solid #d8dce0;
+        border-right:2px solid #888e96; border-bottom:2px solid #78808a;
+        box-shadow:0 2px 4px rgba(0,0,0,0.18) inset; }
+    .type-opt {
+        flex:1 1 50%; display:flex; align-items:center; justify-content:center;
+        font-family:'Exo 2', sans-serif; font-size:16px; font-weight:900; border:none; cursor:pointer;
+        color:var(--ink); background:var(--btn-grad); padding:0; margin:0; line-height:1; height:100%; box-shadow:none; top:0;
+    }
+    .type-opt.selected.plus { background:linear-gradient(180deg,#e05555,#b81111); color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.4); }
+    .type-opt.selected.minus { background:linear-gradient(180deg,#5577e0,#1133b8); color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.4); }
+    .unit-selector { display:flex; width:76px; height:28px; border-radius:7px; overflow:hidden;
+        border-top:2px solid #e4e8ea; border-left:2px solid #d8dce0;
+        border-right:2px solid #888e96; border-bottom:2px solid #78808a;
+        box-shadow:0 2px 4px rgba(0,0,0,0.18) inset; }
+    .unit-opt {
+        flex:1; display:flex; align-items:center; justify-content:center; font-family:'Exo 2', sans-serif;
+        font-size:16.5px; font-weight:800; border:none; cursor:pointer; color:var(--ink); background:var(--btn-grad);
+        padding:0; height:100%; box-shadow:none; top:0;
+    }
+    .unit-opt.selected { background:linear-gradient(180deg,#e0a92a,#b8800a); color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.35); }
+    .coord-row { display:flex; gap:5px; margin-top:8px; }
+    .coord-field { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; }
+    .coord-field label { font-size:11.7px; color:var(--ink); font-family:'Exo 2', sans-serif; font-weight:700; letter-spacing:0.05em; }
+    .coord-field input[type="number"] {
+        width:100%; box-sizing:border-box; text-align:center; font-family:'Audiowide','Orbitron',monospace;
+        font-size:12px; padding:5px 2px; border-radius:6px; color:var(--ink);
+        background:linear-gradient(170deg,#eef1f3 0%,#dfe4e8 100%);
+        border-top:1px solid #ffffff; border-left:1px solid #e4e8ea;
+        border-right:1px solid #9ea6ac; border-bottom:1px solid #8a9098;
+        box-shadow:0 1px 3px rgba(0,0,0,0.2) inset;
+    }
+    .readout-table { width:100%; border-collapse:collapse; font-size:18px; font-family:'Exo 2', sans-serif; }
+    .readout-table th, .readout-table td { padding:7px 9px; text-align:left; border-bottom:1px solid #dee2e6; }
+    .reveal-cell {
+        cursor:pointer; text-align:center; user-select:none; color:#7a8288;
+        border-radius:4px; transition:background 0.15s;
+    }
+    .reveal-cell:hover { background:#eef4fb; }
+    .reveal-cell.revealed { cursor:default; color:#1a3a6a; font-weight:800; text-align:left; }
+    .reveal-cell.revealed:hover { background:transparent; }
+    .readout-table th { color:#1a3a6a; font-family:'Exo 2', sans-serif; font-weight:800; font-size:15px; letter-spacing:0.04em; text-transform:uppercase; }
+    .readout-table sup { font-size:0.68em; line-height:0; vertical-align:super; }
+    .swatch { display:inline-block; width:15px; height:15px; border-radius:50%; margin-right:6px; vertical-align:middle;
+        box-shadow:0 1px 2px rgba(0,0,0,0.4); }
+    /* Probe readout box */
+    .probe-panel {
+        background:linear-gradient(170deg,#c9e8d8 0%,#a8cdbb 100%); border-left:4px solid #1d7d5a; border-radius:7px;
+        padding:6px 10px; margin-top:4.5px;
+        box-shadow:0 2px 5px rgba(0,0,0,0.15) inset, 0 1px 0 rgba(255,255,255,0.5) inset;
+        font-family:'Exo 2', sans-serif; color:#0a4a30; font-size:16.2px; font-weight:700; line-height:1.35;
+    }
+    .probe-panel .prow { display:flex; justify-content:flex-start; gap:8px; }
+    .probe-panel .prow-triple { justify-content:space-between; gap:6px; margin-top:2px; }
+    .probe-panel .ptriple { flex:1; display:flex; flex-direction:column; align-items:center; gap:1px; }
+    .probe-panel .ptriple .plabel { font-size:14px; }
+    .probe-panel .ptriple span:last-child { font-size:13px; }
+    .probe-panel .plabel { color:#146b48; }
+    /* Modals */
+    .info-modal { display:none; position:fixed; z-index:12000; left:0; top:0; width:100%; height:100%; background-color: rgba(0,0,0,0.55); overflow:auto; }
+    .info-modal.show { display:block; }
+    .info-modal-content { background-color:#ffffff; margin:2% auto; border-radius:12px; width:82%; max-width:920px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden;
+        box-shadow:0 20px 40px rgba(0,0,0,0.4); }
+    .info-modal-body { padding:2rem; overflow-y:auto; flex:1 1 auto; font-family:'Exo 2', sans-serif; color:#374151; }
+    .info-modal-footer { flex:0 0 auto; padding:14px 30px; background:#fefefe; border-top:2px solid #e5e7eb; text-align:center; border-radius:0 0 12px 12px; }
+    .info-modal-close { color:#aaa; float:right; font-size:28px; font-weight:bold; cursor:pointer; line-height:20px; }
+    .info-modal-close:hover { color:#000; }
+    .info-modal-close-btn {
+        display:inline-block; padding:10px 3rem; border-radius:9px; border:none; cursor:pointer;
+        font-size:15px; font-family:'Exo 2', sans-serif; font-weight:800; letter-spacing:0.03em; color:#fff;
+        background:var(--accent-grad); box-shadow:0 4px 12px rgba(60,80,200,0.4); transition:all 0.2s;
+    }
+    .info-modal-close-btn:hover { filter:brightness(1.1); transform:translateY(-1px); }
+    .info-modal h1 { font-family:'Audiowide', cursive; }
+    .info-modal h2 { color:var(--ink); border-bottom:2px solid #3a5a9a; padding-bottom:10px; margin-top:25px; font-family:'Audiowide', cursive; font-size:1.05rem; letter-spacing:0.02em; }
+    .info-modal h3 { color:var(--ink); margin-top:20px; }
+    .info-modal h4 { color:var(--ink); margin-top:14px; margin-bottom:4px; }
+    .info-modal p { line-height:1.6; margin:10px 0; }
+    .info-modal ul { margin:10px 0; padding-left:25px; }
+    .info-modal li { margin:8px 0; line-height:1.5; }
+    .info-modal strong { color:var(--ink); }
+    .formula sub, .formula sup { font-size:0.72em; line-height:0; }
+    .formula { background-color:#f3f6fa; padding:15px; margin:15px 0; border-left:4px solid #3a5a9a; font-family:'Exo 2', monospace; font-size:17px; line-height:1.7; white-space:pre-wrap; border-radius:0 6px 6px 0; }
+    .coord-tag {
+        position:absolute; background:rgba(255,255,255,0.95); padding:3px 7px; font-size:11px; font-weight:bold; color:var(--ink);
+        border-radius:4px; pointer-events:none; display:none; font-family:'Audiowide','Orbitron',monospace;
+        box-shadow:0 2px 6px rgba(0,0,0,0.3);
+    }
+    /* ===== FOOTER / CREDIT BAR ===== */
+    footer.panel{
+      width:100%; box-sizing:border-box; margin-top:10px; min-height:var(--ftr);
+      display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; padding:8px 14px;
+      background:var(--panel-grad);
+      border-top:2px solid #eaeef0; border-left:2px solid #e0e4e6;
+      border-right:2px solid #8a9098; border-bottom:3px solid #78808a;
+      border-radius:14px; position:relative;
+      box-shadow:0 0 0 1px rgba(255,255,255,0.6) inset, 0 8px 28px rgba(0,0,0,0.22);
+      font-family:'Exo 2', sans-serif; color:var(--ink-soft);
+    }
+    .footer-left {justify-self:start; font-size:14px;}
+    .footer-center {justify-self:center}
+    .footer-right {justify-self:end; text-align:right; font-size:12px;}
+    .credits-link{ font-weight:800; text-decoration:underline; cursor:help; color:var(--ink); position:relative; }
+    .credits-tooltip{
+      position:fixed; left:12px; bottom: calc(var(--ftr) + 10px);
+      display:none; background:#2c3e50; color:#fff; border-radius:10px; padding:10px 12px; min-width:260px;
+      font-family:'Exo 2', sans-serif; font-size:0.82rem;
+      box-shadow:0 10px 24px rgba(0,0,0,.35); z-index:2147483647;
+    }
+    .credits-link:hover + .credits-tooltip, .credits-link:focus + .credits-tooltip{ display:block; }
+    .cc-link a{ color:#3a5a9a; text-decoration:none; font-weight:800; }
+    .cc-link a:hover{ color:#2a4080; text-decoration:underline; }
+    .btn-gray { background:var(--btn-grad); color:var(--ink); font-family:'Exo 2',sans-serif; font-weight:800;
+        border-top:2px solid #e4e8ea; border-left:2px solid #d8dce0;
+        border-right:2px solid #888e96; border-bottom:3px solid #78808a; }
+
+    /* ===== EDIT 6: LASER + MARKERBOARD (adapted from EWP_physics_simulator / Springs) ===== */
+    .tool-card {
+      flex:1; display:flex; align-items:center; justify-content:center; gap:7px;
+      padding:6px 10px; border-radius:9px;
+      background:var(--card-grad);
+      border-top:1px solid #9ea6ac; border-left:1px solid #a8b0b6;
+      border-right:1px solid #d8dee2; border-bottom:2px solid #d0d8dc;
+      box-shadow:0 2px 4px rgba(0,0,0,0.15) inset,0 1px 0 rgba(255,255,255,0.65) inset;
+    }
+    .tool-card-label { font-family:'Exo 2',sans-serif; font-size:1.025rem; font-weight:800; letter-spacing:0.03em; white-space:nowrap; text-shadow:0 1px 0 rgba(255,255,255,0.7); }
+    .tool-card-btns { display:flex; gap:4px; }
+    .toggle-btn {
+      min-width:38px; padding:4px 7px; border-radius:7px; cursor:pointer;
+      font-family:'Exo 2',sans-serif; font-size:0.85rem; font-weight:800;
+      letter-spacing:0.04em; color:#18202a;
+      background:var(--btn-grad);
+      border-top:2px solid #e4e8ea; border-left:2px solid #d8dce0;
+      border-right:2px solid #888e96; border-bottom:3px solid #78808a;
+      text-shadow:0 1px 1px rgba(255,255,255,0.85);
+      box-shadow:0 3px 6px rgba(0,0,0,0.18),0 1px 0 rgba(255,255,255,0.75) inset;
+      transition:all 0.1s; flex:none;
+    }
+    .toggle-btn:hover { background:var(--btn-grad-hover); }
+    .toggle-btn.active { background:var(--active-grad) !important; color:#e8f0ff !important; }
+    #laserPointer {
+      position:fixed; pointer-events:none; z-index:99999; display:none;
+      width:42px; height:42px; border-radius:50%;
+      background:radial-gradient(circle,#ff0000 0px,#ff0000 10px,transparent 11px,transparent 12px,
+        rgba(255,0,0,0.7) 12px,rgba(255,0,0,0.4) 17px,rgba(255,0,0,0.1) 20px,rgba(255,0,0,0) 21px);
+      transform:translate(-50%,-50%);
+    }
+    #laserPointer.active { display:block; }
+    #markerboardOverlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; pointer-events:none; }
+    #markerboardOverlay.active { display:block; pointer-events:auto; }
+    #markerboardOverlay.whiteboard-mode { background:rgba(255,255,255,var(--wb-opacity,0.92)); }
+    #markerboardCanvas { position:absolute; top:0; left:0; width:100%; height:100%; cursor:crosshair; }
+    #mbToolbar {
+      position:fixed; top:12px; left:50%; transform:translateX(-50%);
+      display:none; align-items:center; gap:10px;
+      padding:10px 16px; border-radius:14px; white-space:nowrap; z-index:10001;
+      background:linear-gradient(160deg,#c87941 0%,#b5632a 20%,#a05020 40%,#c07038 60%,#a85c28 80%,#b86830 100%);
+      border-top:2px solid #e8a060; border-left:2px solid #d89050;
+      border-right:2px solid #6a3010; border-bottom:3px solid #5a2808;
+      box-shadow:0 0 0 1px rgba(255,200,120,0.4) inset,0 8px 32px rgba(0,0,0,0.4);
+    }
+    #mbToolbar.active { display:flex; }
+    .color-palette { display:flex; gap:6px; }
+    .color-btn { width:30px; height:30px; border-radius:50%; cursor:pointer; border:2px solid #888e96; box-shadow:0 3px 8px rgba(0,0,0,0.45); transition:transform 0.1s; }
+    .color-btn:hover { transform:scale(1.15); }
+    .color-btn.selected { border:3px solid #fff; box-shadow:0 0 0 2px #3a5a9a,0 1px 3px rgba(0,0,0,0.3); }
+    .size-control,.opacity-control { display:flex; flex-direction:column; gap:2px; }
+    .size-label,.opacity-label { font-family:'Exo 2',sans-serif; font-size:0.9rem; font-weight:800; color:#1e2830; text-shadow:0 1px 0 rgba(255,255,255,0.7); white-space:nowrap; }
+    .size-slider,.opacity-slider { width:80px; height:5px; cursor:pointer; outline:none; -webkit-appearance:none; background:linear-gradient(90deg,#888e96,#a0a8b0); border-radius:3px; }
+    .size-slider::-webkit-slider-thumb,.opacity-slider::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; cursor:pointer; background:radial-gradient(circle at 35% 35%,#eef2f6 0%,#ced6de 40%,#8e98a6 100%); border:1px solid #585e68; }
+    .opacity-slider { width:96px; background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.92) 100%),repeating-linear-gradient(45deg,#aaa 0px,#aaa 4px,#ddd 4px,#ddd 8px); }
+    .opacity-control { opacity:0.38; pointer-events:none; transition:opacity 0.2s; }
+    .opacity-control.wb-active { opacity:1; pointer-events:auto; }
+    .toolbar-btn {
+      padding:5px 10px; border-radius:7px; cursor:pointer;
+      font-family:'Exo 2',sans-serif; font-size:0.9rem; font-weight:800; color:#18202a;
+      background:var(--btn-grad);
+      border-top:2px solid #e4e8ea; border-left:2px solid #d8dce0;
+      border-right:2px solid #888e96; border-bottom:3px solid #78808a;
+      box-shadow:0 2px 4px rgba(0,0,0,0.18),0 1px 0 rgba(255,255,255,0.75) inset;
+    }
+    .toolbar-btn:hover { background:var(--btn-grad-hover); }
+    .toolbar-btn.active,.whiteboard-btn.active { background:var(--active-grad) !important; color:#e8f0ff !important; }
+    .exit-btn { background:linear-gradient(180deg,#ff3333 0%,#ee1111 60%,#cc0000 100%) !important; color:#fff !important; }
+
+    /* ================= DEVICE COMPATIBILITY ================= */
+    /* Touch ergonomics: no double-tap zoom delay, no blue tap flash,
+       no accidental text selection while dragging controls. */
+    button, .type-opt, .unit-opt, .mode-opt, .step-btn, .color-btn, .toggle-btn, .toolbar-btn {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none; user-select: none;
+    }
+    input[type="range"] { touch-action: pan-y; }
+    #graphPanel canvas { touch-action: manipulation; }
+    /* Larger thumbs on touch devices so sliders are usable with a finger */
+    @media (pointer: coarse) {
+        .slider-control input[type="range"] { height:10px; }
+        .slider-control input[type="range"]::-webkit-slider-thumb { width:26px; height:26px; margin-top:-8px; }
+        .slider-control input[type="range"]::-moz-range-thumb { width:26px; height:26px; }
+        .step-btn { width:30px; height:30px; font-size:12px; }
+        button { padding:11px; }
+        .type-selector { width:72px; height:34px; }
+        .unit-selector { width:88px; height:34px; }
+        .coord-field input[type="number"] { padding:7px 2px; font-size:14px; }
+        .mag-display-wrap { height:30px; }
+        .mag-display-input { font-size:14px; }
+        .info-modal-close { font-size:36px; }
+    }
+    /* Tablets / narrow laptops: two columns, canvas on its own row */
+    @media (max-width: 1180px) {
+        #appWrap { width:100%; }
+        #titleRow { flex-wrap:wrap; }
+        #pageTitleBanner { flex:1 1 100%; font-size:26px !important; letter-spacing:0.04em; }
+        #infoBoxHeader { flex:1 1 100%; }
+        .canvas-container { flex:1 1 100%; max-width:840px; margin:0 auto; }
+        .left-panel, .control-panel { flex:1 1 320px; width:auto; }
+    }
+    /* Phones: single column, everything full width */
+    @media (max-width: 760px) {
+        body { padding:10px; }
+        .container { padding:8px 0 0 0; gap:8px; }
+        #pageTitleBanner { font-size:20px !important; letter-spacing:0.03em; padding:10px 8px; }
+        #infoBtnHeader { font-size:16px; padding:9px 16px; }
+        .left-panel, .control-panel, .canvas-container { flex:1 1 100%; width:100%; max-width:100%; min-width:0; }
+        canvas#chargeCanvas { max-width:100%; }
+        .panel-title { font-size:15px; letter-spacing:0.04em; }
+        .info-modal-content { width:96%; margin:3% auto; max-height:94vh; }
+        .info-modal-body { padding:16px; }
+        .info-modal-footer { padding:10px 16px; }
+        .readout-table { font-size:14px; }
+        .readout-table th { font-size:11px; }
+        .readout-table th, .readout-table td { padding:5px 6px; }
+        .swatch { width:11px; height:11px; margin-right:4px; }
+        footer.panel { grid-template-columns:1fr; justify-items:center; text-align:center; gap:6px; padding:10px; }
+        .footer-left, .footer-right { justify-self:center; text-align:center; }
+        .formula { font-size:14px; padding:10px; }
+        #mbToolbar { flex-wrap:wrap; justify-content:center; max-width:96vw; gap:6px; padding:8px 10px; }
+        .color-btn { width:26px; height:26px; }
+        .size-slider, .opacity-slider { width:70px; }
+    }
+    /* Very small phones */
+    @media (max-width: 420px) {
+        #pageTitleBanner { font-size:16px !important; letter-spacing:0.02em; }
+        .coord-field label { font-size:10.4px; }
+        .digital-display { min-width:56px; font-size:12px; }
+        .readout-table { font-size:12.5px; }
+    }
+    /* Tables can always be scrolled sideways rather than overflowing */
+    .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    /* Landscape phones: keep modals usable */
+    @media (max-height: 500px) {
+        .info-modal-content { margin:1% auto; max-height:98vh; }
+        .info-modal-body { padding:12px 16px; }
+    }
+
+    /* ===== TWO-STATE SIMULATOR ADDITIONS ===== */
+    .canvas-container { flex:1 1 500px; min-width:480px; max-width:860px; }
+    .view-top { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    #layoutSel { flex:0 0 190px; margin:0; }
+    #layoutSel .mode-opt { font-size:12.5px; }
+    .psi-eq { flex:1; min-width:0; padding:4px 10px; border-radius:8px; cursor:pointer; text-align:center; line-height:1.9;
+        font-family:'Exo 2',sans-serif; font-size:16px; font-weight:800; color:#1a3a6a; background:rgba(255,255,255,0.5);
+        box-shadow:0 1px 3px rgba(0,0,0,0.2) inset; }
+    .psi-eq:hover { background:rgba(255,255,255,0.75); }
+    .psi-eq .t1 { color:#b85a00; } .psi-eq .t2 { color:#0a6aa8; }
+    .psi-eq sup { font-size:0.68em; line-height:0; } .psi-eq sub { font-size:0.68em; line-height:0; }
+    @media (max-width: 760px) { .view-top { flex-direction:column; align-items:stretch; } #layoutSel { flex:none; } }
+    #viewGrid { display:grid; gap:10px; grid-template-columns:1fr 1fr; }
+    #viewGrid.layout-1 { grid-template-columns:1fr; }
+    #viewGrid.layout-1 .view-pane:nth-child(n+2) { display:none; }
+    #viewGrid.layout-2 .view-pane:nth-child(n+3) { display:none; }
+    .view-pane { display:flex; flex-direction:column; gap:6px; min-width:0; }
+    .view-pane canvas { display:block; width:100%; aspect-ratio:1/1; background:#0c1220; border:1px solid #333; border-radius:6px;
+        box-shadow:0 2px 8px rgba(0,0,0,0.25) inset; touch-action:none; }
+    #viewGrid.layout-1 .view-pane canvas { aspect-ratio:1.25/1; }
+    #viewGrid.layout-4 .view-pane canvas { aspect-ratio:1.3/1; }
+    #pageTitleBanner { padding:8px 20px; }
+    .tool-row { display:flex; gap:6px; }
+    .tool-row .tool-card { flex-direction:column; gap:4px; padding:6px 4px; }
+    .pane-head { display:flex; gap:4px; align-items:stretch; }
+    .zoom-btn { flex:0 0 32px; padding:0; font-size:17px; line-height:1; border-radius:7px; }
+    .view-select {
+        width:100%; font-family:'Exo 2',sans-serif; font-weight:800; font-size:13.5px; letter-spacing:0.03em; color:var(--ink);
+        padding:6px 8px; border-radius:7px; cursor:pointer; background:var(--btn-grad);
+        border-top:2px solid #e4e8ea; border-left:2px solid #d8dce0; border-right:2px solid #888e96; border-bottom:2px solid #78808a;
+    }
+    .degen-banner { margin-bottom:8px; padding:7px 10px; border-radius:7px; font-family:'Exo 2',sans-serif; font-weight:800; font-size:13.5px;
+        color:#6a3a00; background:linear-gradient(170deg,#ffe9b8 0%,#f5d27a 100%); border-left:4px solid #c07a00; }
+    .coef-block { border-radius:9px; padding:8px 10px; margin-top:8px;
+        border-top:1px solid #9ea6ac; border-left:1px solid #a8b0b6; border-bottom:2px solid #d0d8dc;
+        box-shadow:0 2px 4px rgba(0,0,0,0.15) inset, 0 1px 0 rgba(255,255,255,0.5) inset; }
+    .coef-block.c1 { background:linear-gradient(170deg,#ffe4cc 0%,#f5c79c 100%); border-right:3px solid #e07010; }
+    .coef-block.c2 { background:linear-gradient(170deg,#d4efff 0%,#a9d8f5 100%); border-right:3px solid #1a8ac8; }
+    .coef-block .cname { font-family:'Exo 2',sans-serif; font-size:19px; font-weight:800; margin-bottom:4px; text-shadow:0 1px 0 rgba(255,255,255,0.6); }
+    .coef-block.c1 .cname { color:#8a3a00; }
+    .coef-block.c2 .cname { color:#0a4a7a; }
+    .coef-block .slider-control label { font-size:13.5px; }
+    .coef-block .digital-display { min-width:74px; }
+    .auto-note { font-family:'Exo 2',sans-serif; font-size:12px; font-weight:600; color:var(--ink-soft); margin-top:3px; }
+    .state-summary { margin-top:8px; padding:6px 8px; border-radius:7px; background:rgba(255,255,255,0.45);
+        font-family:'Exo 2',sans-serif; font-size:13.5px; font-weight:800; color:#1a3a6a; text-align:center; line-height:1.4; }
+    #levelCanvas { display:block; width:100%; aspect-ratio:316/120; margin-top:6px; background:#0c1220; border:1px solid #7a8288; border-radius:6px; }
+    .omega-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-top:6px; }
+    .omega-grid .og { display:flex; flex-direction:column; align-items:center; padding:3px 2px; border-radius:6px;
+        background:linear-gradient(170deg,#b8bec4 0%,#a8b0b8 100%); box-shadow:0 2px 5px rgba(0,0,0,0.2) inset; }
+    .omega-grid .ol { font-family:'Exo 2',sans-serif; font-size:12px; font-weight:800; color:var(--ink-soft); }
+    .omega-grid .ov { font-family:'Audiowide','Orbitron',monospace; font-size:12px; color:var(--ink); }
+    .basis-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .basis-grid button { font-size:17px; padding:6px 4px; font-family:'Exo 2',sans-serif; text-transform:none; }
+    .basis-grid button sub { font-size:0.7em; }
+    .basis-grid button.mode-btn { font-size:14px; }
+    .pick-sliders { margin-top:8px; }
+    .state-open-btn { width:100%; display:flex; align-items:center; gap:8px; padding:8px 10px; text-align:left; }
+    .state-open-btn + .state-open-btn { margin-top:6px; }
+    .state-open-btn .sob-title { flex:0 0 auto; font-size:12px; letter-spacing:0.05em; color:#1a3a6a; line-height:1.25; }
+    .state-open-btn .sob-val { flex:1; text-align:right; font-size:17px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .state-open-btn .sob-val sub { font-size:0.7em; }
+    .state-open-btn .sob-edit { flex:0 0 auto; font-size:14px; opacity:0.7; }
+    .state-modal { background-color:rgba(0,0,0,0.18); }
+    .basis-btn { margin-left:auto; white-space:nowrap; flex:0 0 auto; padding:2px 7px; font-size:11px; font-weight:700; letter-spacing:0; text-transform:none; border-radius:6px;
+        border-width:1px; border-bottom-width:2px; box-shadow:0 1px 3px rgba(0,0,0,0.15); color:var(--ink-soft); }
+    .basis-btn sub { font-size:0.75em; }
+    .state-open-btn .sob-sub { font-size:10.5px; letter-spacing:0; text-transform:none; color:var(--ink-soft); font-weight:700; }
+    .state-open-btn .ham-sum { font-size:12px; line-height:1.35; }
+    .ham-btn { font-size:12px; padding:7px 5px; line-height:1.25; }
+    .ham-btn { display:flex; align-items:center; justify-content:center; gap:5px; }
+    .mat-lbl2 { display:inline-block; line-height:1.05; text-align:left; }
+    .mat-lbl2 small { font-size:8.5px; letter-spacing:0.02em; }
+    #levelCanvas { touch-action:none; }
+    .grid-ico { display:inline-grid; grid-template-columns:6px 6px; gap:2px; vertical-align:middle; margin-right:3px; }
+    .grid-ico i { display:block; width:6px; height:6px; border:1.5px solid currentColor; border-radius:1px; }
+    .mat-wrap { display:flex; align-items:center; justify-content:center; gap:8px; margin:14px 0 6px; font-family:'Exo 2',sans-serif; font-weight:800; color:#1a3a6a; }
+    .mat-wrap .mat-lbl { font-size:22px; }
+    .mat-br { border-left:2.5px solid #1a3a6a; border-right:2.5px solid #1a3a6a; border-radius:10px; padding:4px 8px; }
+    .mat-br table { border-collapse:collapse; }
+    .mat-br td { padding:6px 12px; text-align:center; font-family:'Audiowide','Orbitron',monospace; font-size:15px; font-weight:400; white-space:nowrap; }
+    .mat-sub { align-self:flex-end; font-size:18px; margin-left:-4px; }
+    .basis-grid-4 { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .basis-grid-4 button { font-size:16px; padding:6px 4px; text-transform:none; }
+    .basis-grid-4 button sub { font-size:0.7em; }
+    .state-modal .info-modal-content { width:400px; max-width:94vw; margin:90px 0 0 30px; }
+    .state-modal .info-modal-body { padding:1.1rem 1.2rem; }
+    .state-modal h2 { margin-top:0; }
+    @media (max-width: 760px) { .state-modal .info-modal-content { margin:3% auto; } }
+    .time-readout { margin-top:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .time-readout .digital-display { flex:1; justify-content:center; font-size:15px; height:30px; }
+    #playBtn { font-size:16px; }
+    #playBtn.playing { background:linear-gradient(145deg,#e8a33a 0%,#c47a10 50%,#a05f00 100%); }
+    .ro-table { width:100%; border-collapse:collapse; }
+    .ro-table td { padding:2px 3px; vertical-align:top; }
+    .ro-table td:first-child { color:#146b48; white-space:nowrap; }
+    .ro-table td:last-child { font-family:'Audiowide','Orbitron',monospace; font-size:12px; text-align:right; font-weight:400; }
+    .probe-panel { font-size:14.5px; }
+    .info-modal table.sym { border-collapse:collapse; margin:10px 0; }
+    .info-modal table.sym td { padding:4px 10px; border-bottom:1px solid #e5e7eb; }
+    @media (max-width: 1180px) { .canvas-container { min-width:0; } }
+    /* Keep the three columns side by side down to 961px: the view area shrinks (and its canvases with it)
+       so the TIME panel stays at the right edge instead of wrapping below. */
+    @media (min-width: 961px) {
+        #appWrap { width:100%; max-width:1600px; }
+        .container { flex-wrap:nowrap; }
+        .canvas-container { flex:1 1 0; min-width:0; max-width:860px; margin:0; }
+        .left-panel { flex:0 1 340px; width:auto; min-width:250px; }
+        .control-panel { flex:0 1 330px; width:auto; min-width:250px; }
+        #titleRow { flex-wrap:nowrap; }
+        #pageTitleBanner { flex:1 1 auto; }
+        #infoBoxHeader { flex:0 1 330px; }
+    }
+    /* narrower windows: slim the side panels first so the views keep most of the width */
+    @media (min-width: 961px) and (max-width: 1320px) {
+        .left-panel, .control-panel { flex-basis:295px; }
+        #infoBoxHeader { flex-basis:295px; }
+    }
+    @media (min-width: 961px) and (max-width: 1160px) {
+        .left-panel, .control-panel { flex-basis:262px; }
+        #infoBoxHeader { flex-basis:262px; }
+    }
+    @media (min-width: 961px) and (max-width: 1320px) {
+        .panel-title { font-size:0.92rem; letter-spacing:0.03em; }
+        .panel-title span { white-space:nowrap; }
+        .probe-panel { font-size:13px; padding:6px 7px; }
+        .ro-table td:last-child { font-size:10.5px; white-space:nowrap; }
+        .ro-table td:first-child { white-space:normal; }
+    }
+    .view-top { flex-wrap:wrap; }
+    .psi-eq { min-width:260px; }
+    @media (max-width: 760px) { #viewGrid { grid-template-columns:1fr; } #viewGrid.layout-1 .view-pane canvas { aspect-ratio:1/1; } }
+</style>
+</head>
+<body>
+
+<!-- Laser + markerboard overlays (from the Electric Charge Simulator) -->
+<!-- Laser + markerboard overlays -->
+<div id="laserPointer"></div>
+<div id="markerboardOverlay"><canvas id="markerboardCanvas" role="img" aria-label="Freehand annotation layer"></canvas></div>
+<div id="mbToolbar">
+  <div class="color-palette">
+    <div class="color-btn selected" style="background:radial-gradient(circle at 35% 30%,#FF6666 0%,#EE0000 50%,#880000 100%);" data-color="#EE0000" title="Red"></div>
+    <div class="color-btn" style="background:radial-gradient(circle at 35% 30%,#6666FF 0%,#0000FF 50%,#000088 100%);" data-color="#0000FF" title="Blue"></div>
+    <div class="color-btn" style="background:radial-gradient(circle at 35% 30%,#E066FF 0%,#CC00FF 50%,#660088 100%);" data-color="#CC00FF" title="Purple"></div>
+    <div class="color-btn" style="background:radial-gradient(circle at 35% 30%,#33AA33 0%,#006600 50%,#003300 100%);" data-color="#006600" title="Green"></div>
+    <div class="color-btn" style="background:radial-gradient(circle at 35% 30%,#FFCC55 0%,#FF9900 50%,#AA5500 100%);" data-color="#FF9900" title="Orange"></div>
+    <div class="color-btn" style="background:radial-gradient(circle at 35% 30%,#FFFFAA 0%,#FFFF00 50%,#AAAA00 100%);border-color:#ccc;" data-color="#FFFF00" title="Yellow"></div>
+    <div class="color-btn" style="background:radial-gradient(circle at 35% 30%,#FFFFFF 0%,#FFFFFF 50%,#BBBBBB 100%);border-color:#aaa;" data-color="#FFFFFF" title="White"></div>
+    <div class="color-btn" style="background:radial-gradient(circle at 35% 30%,#555555 0%,#000000 50%,#000000 100%);" data-color="#000000" title="Black"></div>
+  </div>
+  <div class="size-control">
+    <span class="size-label">Size: <span id="sizeValue">5</span>px</span>
+    <input type="range" class="size-slider" id="markerSizeInput" min="2" max="20" value="5">
+  </div>
+  <div class="opacity-control" id="opacityControl">
+    <span class="opacity-label">Opacity: <span id="wbOpacityValue">92</span>%</span>
+    <input type="range" class="opacity-slider" id="wbOpacityInput" min="65" max="100" value="92">
+  </div>
+  <button class="toolbar-btn whiteboard-btn" id="whiteboardBtn">WHITEBOARD</button>
+  <button class="toolbar-btn" id="eraseBtn">ERASE</button>
+  <button class="toolbar-btn" id="clearBtn">CLEAR</button>
+  <button class="toolbar-btn exit-btn" id="mbExitBtn">EXIT</button>
+</div>
+
+<div id="appWrap">
+
+<div id="titleRow">
+    <div id="pageTitleBanner"><span class="title-emoji">&#936;</span> TWO-STATE TIME EVOLUTION</div>
+    <div id="infoBoxHeader"><button id="infoBtnHeader">&#9432; INFO</button></div>
+</div>
+
+<div class="container">
+
+    <!-- LEFT PANEL: states, Hamiltonian, presentation tools -->
+    <div class="left-panel">
+        <div class="control-group">
+            <button class="btn-secondary" id="fsBtn" style="width:100%; margin-bottom:6px; padding:7px;">&#x26F6; SET TO FULL SCREEN</button>
+            <button class="btn-secondary state-open-btn" id="initOpenBtn" aria-haspopup="dialog" title="Set the initial state">
+                <span class="sob-title">&#9883;&#65039; INITIAL STATE<br>|&psi;(0)&#10217;</span><span class="sob-val" id="initBtnLabel">&mdash;</span><span class="sob-edit">&#9998;</span>
+            </button>
+            <button class="btn-secondary state-open-btn" id="measOpenBtn" aria-haspopup="dialog" title="Set the measurement basis">
+                <span class="sob-title" style="color:#0a5c3a;">&#127919; MEASUREMENT<br>BASIS</span><span class="sob-val" id="measBtnLabel">&mdash;</span><span class="sob-edit">&#9998;</span>
+            </button>
+        </div>
+
+        <div class="control-group">
+            <button class="btn-secondary state-open-btn" id="hamToggleBtn" aria-expanded="false" aria-controls="hamBody" title="Show or hide the Hamiltonian settings">
+                <span class="sob-title">&#9889; DEFINE HAMILTONIAN<br><span class="sob-sub">Energy eigenstates &amp; eigenvalues</span></span>
+                <span class="sob-val ham-sum" id="hamBtnLabel">&mdash;</span><span class="sob-edit" id="hamChevron">&#9656;</span>
+            </button>
+            <div id="hamBody" style="display:none;">
+            <div class="auto-note" style="margin:6px 0 0; text-align:center;">Time-independent Hamiltonian</div>
+            <div class="button-row" style="margin:4px 0 6px;">
+                <button class="btn-secondary ham-btn" id="basisOpenBtn" title="Choose the energy eigenstates (default |+⟩z, |−⟩z)" aria-haspopup="dialog"><span class="mat-lbl2" style="text-align:center;">EIGENSTATES<br><span style="white-space:nowrap; font-size:14px;"><span id="basisBtnLabel">|&plusmn;&#10217;<sub>z</sub></span> &#9998;</span></span></button>
+                <button class="btn-secondary ham-btn" id="matrixOpenBtn" title="Show the Hamiltonian as a 2&times;2 matrix" aria-haspopup="dialog"><span class="grid-ico" aria-hidden="true"><i></i><i></i><i></i><i></i></span> <span class="mat-lbl2">MATRIX<br><small>REPRESENTATION</small></span></button>
+            </div>
+            <div class="slider-control">
+                <label>E&#8321; = energy of <span id="E1Ket">|+&#10217;<sub>z</sub></span> <span class="E-unit">(eV)</span></label>
+                <div class="slider-row">
+                    <button class="step-btn" data-slider="E1Slider" data-dir="-1" aria-label="Decrease E1">&#9664;</button>
+                    <input type="range" id="E1Slider" min="-3" max="5" step="0.05" value="1">
+                    <button class="step-btn" data-slider="E1Slider" data-dir="1" aria-label="Increase E1">&#9654;</button>
+                    <div class="digital-display" id="E1Val">1.00</div>
+                </div>
+            </div>
+            <div class="slider-control" style="margin-top:4px;">
+                <label>E&#8322; = energy of <span id="E2Ket">|&minus;&#10217;<sub>z</sub></span> <span class="E-unit">(eV)</span></label>
+                <div class="slider-row">
+                    <button class="step-btn" data-slider="E2Slider" data-dir="-1" aria-label="Decrease E2">&#9664;</button>
+                    <input type="range" id="E2Slider" min="-3" max="5" step="0.05" value="2.5">
+                    <button class="step-btn" data-slider="E2Slider" data-dir="1" aria-label="Increase E2">&#9654;</button>
+                    <div class="digital-display" id="E2Val">2.50</div>
+                </div>
+            </div>
+            <canvas id="levelCanvas" role="img" aria-label="Energy level diagram showing E1, E2 and the gap between them; drag a line to change its energy"></canvas>
+            <div class="omega-grid">
+                <div class="og"><span class="ol">&omega;&#8321; = E&#8321;/&hbar;</span><span class="ov" id="w1Val">&mdash;</span></div>
+                <div class="og"><span class="ol">&omega;&#8322; = E&#8322;/&hbar;</span><span class="ov" id="w2Val">&mdash;</span></div>
+                <div class="og"><span class="ol">&omega;&#8322;&#8321;</span><span class="ov" id="w21Val">&mdash;</span></div>
+                <div class="og"><span class="ol">T&#8321; = 2&pi;/|&omega;&#8321;|</span><span class="ov" id="T1Val">&mdash;</span></div>
+                <div class="og"><span class="ol">T&#8322;</span><span class="ov" id="T2Val">&mdash;</span></div>
+                <div class="og"><span class="ol">T&#8322;&#8321;</span><span class="ov" id="T21Val">&mdash;</span></div>
+            </div>
+            <div class="auto-note" id="omegaUnits" style="text-align:center;">&mdash;</div>
+            <div class="button-row" style="margin-top:8px;">
+                <button class="btn-secondary" id="shiftDownBtn" title="Lower both energies by 1: the relative phase is unchanged">BOTH E &minus; 1</button>
+                <button class="btn-secondary" id="shiftUpBtn" title="Raise both energies by 1: the relative phase is unchanged">BOTH E + 1</button>
+            </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="panel-title" style="font-size:16px; color:#5a3a10;">&#127908; PRESENTATION TOOLS</div>
+            <div class="tool-row">
+            <div class="tool-card">
+              <span class="tool-card-label" style="color:#7a1a1a;">&#128308; LASER</span>
+              <div class="tool-card-btns">
+                <button id="laserOnBtn" class="toggle-btn">ON</button>
+                <button id="laserOffBtn" class="toggle-btn active">OFF</button>
+              </div>
+            </div>
+            <div class="tool-card">
+              <span class="tool-card-label" style="color:#1a5a28;">&#9999;&#65039; MARKER</span>
+              <div class="tool-card-btns">
+                <button id="markerOnBtn" class="toggle-btn">ON</button>
+                <button id="markerOffBtn" class="toggle-btn active">OFF</button>
+              </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CENTER: views -->
+    <div class="canvas-container">
+        <div class="view-top">
+            <div class="psi-eq" id="psiEq" role="button" tabindex="0" title="Energy eigenstates: |+⟩z has energy E₁, |−⟩z has energy E₂. Click to set the initial state."></div>
+            <div class="mode-selector" id="layoutSel" title="Number of views">
+                <button class="mode-opt" data-layout="1">1 VIEW</button>
+                <button class="mode-opt" data-layout="2">2</button>
+                <button class="mode-opt selected" data-layout="4">4</button>
+            </div>
+        </div>
+        <div class="degen-banner" id="degenBanner" hidden>E&#8321; = E&#8322; (degenerate): both coefficients rotate together, so the relative phase never changes.</div>
+        <div id="viewGrid" class="layout-4">
+            <div class="view-pane"><div class="pane-head"><select class="view-select" aria-label="View shown in pane 1"></select><button class="zoom-btn" data-zoom="-1" title="Zoom out: longer time window (all plots)">&minus;</button><button class="zoom-btn" data-zoom="1" title="Zoom in: shorter time window (all plots)">+</button></div><canvas class="view-canvas" role="img" aria-label="Simulation view 1"></canvas></div>
+            <div class="view-pane"><div class="pane-head"><select class="view-select" aria-label="View shown in pane 2"></select><button class="zoom-btn" data-zoom="-1" title="Zoom out: longer time window (all plots)">&minus;</button><button class="zoom-btn" data-zoom="1" title="Zoom in: shorter time window (all plots)">+</button></div><canvas class="view-canvas" role="img" aria-label="Simulation view 2"></canvas></div>
+            <div class="view-pane"><div class="pane-head"><select class="view-select" aria-label="View shown in pane 3"></select><button class="zoom-btn" data-zoom="-1" title="Zoom out: longer time window (all plots)">&minus;</button><button class="zoom-btn" data-zoom="1" title="Zoom in: shorter time window (all plots)">+</button></div><canvas class="view-canvas" role="img" aria-label="Simulation view 3"></canvas></div>
+            <div class="view-pane"><div class="pane-head"><select class="view-select" aria-label="View shown in pane 4"></select><button class="zoom-btn" data-zoom="-1" title="Zoom out: longer time window (all plots)">&minus;</button><button class="zoom-btn" data-zoom="1" title="Zoom in: shorter time window (all plots)">+</button></div><canvas class="view-canvas" role="img" aria-label="Simulation view 4"></canvas></div>
+        </div>
+        <div class="canvas-hint">Choose each pane's view from its menu &middot; drag the Bloch sphere to rotate it &middot; &minus;/+ zoom the probability plot (double-click resets either) &middot; SPACE = play/pause</div>
+    </div>
+
+    <!-- RIGHT PANEL: time, display, readouts, tools -->
+    <div class="control-panel">
+        <div class="control-group">
+            <div class="panel-title">&#9201;&#65039; TIME</div>
+            <div class="button-row">
+                <button class="btn-primary" id="playBtn">&#9654; PLAY</button>
+                <button class="btn-secondary" id="resetTimeBtn" style="color:#CC0000;">&#8635; t = 0</button>
+            </div>
+            <div class="time-readout">
+                <button class="step-btn" id="stepBackBtn" style="width:40px; height:30px;" aria-label="Step back in time" title="Step back">&#9664;&#9664;</button>
+                <div class="digital-display" id="timeVal">t = 0.00</div>
+                <button class="step-btn" id="stepFwdBtn" style="width:40px; height:30px;" aria-label="Step forward in time" title="Step forward">&#9654;&#9654;</button>
+            </div>
+            <div class="auto-note" id="timeNote" style="text-align:center;">&mdash;</div>
+            <div class="button-row" style="margin-top:6px;">
+                <button class="btn-secondary" id="addT1Btn" title="Advance by one period of c1">+ T&#8321;</button>
+                <button class="btn-secondary" id="addT2Btn" title="Advance by one period of c2">+ T&#8322;</button>
+                <button class="btn-secondary" id="addT21Btn" title="Advance by one period of the relative phase">+ T&#8322;&#8321;</button>
+            </div>
+            <div class="slider-control" style="margin-top:8px;">
+                <label>Playback speed (<span id="speedUnit">fs</span> per second)</label>
+                <div class="slider-row">
+                    <button class="step-btn" data-slider="speedSlider" data-dir="-1" aria-label="Slower">&#9664;</button>
+                    <input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="0.5">
+                    <button class="step-btn" data-slider="speedSlider" data-dir="1" aria-label="Faster">&#9654;</button>
+                    <div class="digital-display" id="speedVal">0.5&times;</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="panel-title" style="font-size:16px;">&#128065; DISPLAY OPTIONS</div>
+            <div class="button-row">
+                <button class="btn-secondary active-on" id="trailsBtn">TRAILS</button>
+                <button class="btn-secondary active-on" id="arcsBtn">PHASE ARCS</button>
+            </div>
+            <div class="button-row" style="margin-top:6px;">
+                <button class="btn-secondary active-on" id="omegaBtn">&omega; ARROWS</button>
+                <button class="btn-secondary" id="projBtn">PROJECTIONS</button>
+            </div>
+            <div class="slider-control" style="margin-top:8px;"><label>Units</label></div>
+            <div class="mode-selector" id="unitsSel" title="Units for energy and time">
+                <button class="mode-opt selected" data-units="eVfs">eV &amp; fs</button>
+                <button class="mode-opt" data-units="nat">&hbar; = 1</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="panel-title" style="font-size:16px; color:#0a5c3a;">&#128202; LIVE READOUTS</div>
+            <div class="probe-panel">
+                <table class="ro-table">
+                    <tr><td>c&#8321;(t)</td><td id="roC1p">&mdash;</td></tr>
+                    <tr><td>c&#8322;(t)</td><td id="roC2p">&mdash;</td></tr>
+                    <tr><td>|c&#8321;|&sup2;, |c&#8322;|&sup2;</td><td id="roProb">&mdash;</td></tr>
+                    <tr><td>&Delta;&phi; = &phi;&#8322;&minus;&phi;&#8321;</td><td id="roDphi">&mdash;</td></tr>
+                    <tr><td>&#10216;&sigma;<sub>x</sub>&#10217;, &#10216;&sigma;<sub>y</sub>&#10217;, &#10216;&sigma;<sub>z</sub>&#10217;</td><td id="roSig">&mdash;</td></tr>
+                    <tr><td id="roPpLbl">P(+), P(&minus;)</td><td id="roPp">&mdash;</td></tr>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<footer class="panel" role="contentinfo">
+    <div class="footer-left">
+      <span class="credits-link" tabindex="0" aria-describedby="creditTip">Larry Engelhardt</span>
+      <div id="creditTip" class="credits-tooltip" role="tooltip" aria-live="polite">
+        <div style="font-weight:700;">Larry Engelhardt</div>
+        <div>Francis Marion University</div>
+        <div style="margin-top:6px;">Layout adapted from the Electric Charge Simulator v7.02 by Mehmet Fatih Tasar (Georgia State University)</div>
+      </div>
+      , Sep 26, 2026 &mdash; Version 1.0 &middot;
+      <span class="cc-link"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY&#8209;NC&#8209;SA 4.0</a></span>
+    </div>
+    <div class="footer-center"></div>
+    <div class="footer-right">c<sub>n</sub>(t) = c<sub>n</sub>(0) e<sup>&minus;iE<sub>n</sub>t/&hbar;</sup> &middot; <span id="hbarNote">&hbar; = 0.658 eV&middot;fs</span></div>
+</footer>
+
+</div><!-- /appWrap -->
+
+<!-- STATE MODALS -->
+<div id="initModal" class="info-modal state-modal" role="dialog" aria-modal="true">
+    <div class="info-modal-content">
+        <div class="info-modal-body">        
+            <h2>&#9883;&#65039; INITIAL STATE |&psi;(0)&#10217;</h2>
+            <div class="auto-note" style="margin:-4px 0 6px;">Written in the z basis, with the |+&#10217;<sub>z</sub> coefficient real and &ge; 0</div>
+            <div id="initPicker"></div>
+            <div class="state-summary" id="initSummary">&mdash;</div>
+                </div>
+        <div class="info-modal-footer"><button class="info-modal-close-btn" id="initDoneBtn">DONE</button></div>
+    </div>
+</div>
+
+<div id="measModal" class="info-modal state-modal" role="dialog" aria-modal="true">
+    <div class="info-modal-content">
+        <div class="info-modal-body">
+            <h2 style="color:#0a5c3a;">&#127919; MEASUREMENT BASIS</h2>
+            <div class="auto-note" style="margin:-4px 0 8px;">The pair of states |&plusmn;&#10217; the spin is measured in. The plot shows P(+) = |&#10216;+|&psi;(t)&#10217;|&sup2; and P(&minus;) = |&#10216;&minus;|&psi;(t)&#10217;|&sup2;.</div>
+            <div id="measPicker"></div>
+        </div>
+        <div class="info-modal-footer"><button class="info-modal-close-btn" id="measDoneBtn">DONE</button></div>
+    </div>
+</div>
+
+<div id="basisModal" class="info-modal state-modal" role="dialog" aria-modal="true">
+    <div class="info-modal-content">
+        <div class="info-modal-body">
+            <h2>&#9889; ENERGY EIGENSTATES</h2>
+            <div class="auto-note" style="margin:-4px 0 8px;">|E&#8321;&#10217; = |+&#10217;<sub>n</sub> has energy E&#8321;, |E&#8322;&#10217; = |&minus;&#10217;<sub>n</sub> has energy E&#8322;. For a spin, this is a magnetic field along n&#770;.</div>
+            <div id="basisPicker"></div>
+        </div>
+        <div class="info-modal-footer"><button class="info-modal-close-btn" id="basisDoneBtn">DONE</button></div>
+    </div>
+</div>
+
+<div id="matrixModal" class="info-modal state-modal" role="dialog" aria-modal="true">
+    <div class="info-modal-content">
+        <div class="info-modal-body">
+            <h2>&#9638; HAMILTONIAN MATRIX</h2>
+            <div class="auto-note" style="margin:-4px 0 8px;">H = E&#8321;|E&#8321;&#10217;&#10216;E&#8321;| + E&#8322;|E&#8322;&#10217;&#10216;E&#8322;|, written in the basis chosen below. H is time independent.</div>
+            <div class="basis-grid-4" id="matBasisGrid"></div>
+            <div class="mat-wrap" id="matrixBox"></div>
+            <div class="auto-note" id="matrixNote" style="text-align:center;"></div>
+        </div>
+        <div class="info-modal-footer"><button class="info-modal-close-btn" id="matrixDoneBtn">DONE</button></div>
+    </div>
+</div>
+
+<!-- INFO MODAL -->
+<div id="infoModal" class="info-modal">
+    <div class="info-modal-content">
+        <div class="info-modal-body">
+            <span class="info-modal-close" id="infoModalX">&times;</span>
+            <h1 style="color:#2C3E50; text-align:center; margin-top:0;">Two-State Time Evolution</h1>
+            <p style="text-align:center; color:#666; font-style:italic;">two_state_time_evolution &nbsp;|&nbsp; v1.0 &nbsp;|&nbsp; Sep 26, 2026</p>
+            <p style="text-align:center;">Phase, angular frequency and relative phase for a quantum system with two non-degenerate energy eigenstates.</p>
+            <p style="text-align:center;"><strong>This version assumes a time-independent Hamiltonian:</strong> H, its eigenstates and its eigenvalues stay fixed while the state evolves.</p>
+
+            <h2>QUICK START</h2>
+            <ol>
+                <li>Choose the <strong>initial state</strong> |&psi;(0)&#10217;: one of the six spin states |&plusmn;&#10217;<sub>z</sub>, |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub>, a direction (&theta;, &phi;), or |c&#8322;| and &phi;&#8322; directly.</li>
+                <li>Choose the energies E&#8321; and E&#8322;.</li>
+                <li>Choose the <strong>measurement basis</strong> |&plusmn;&#10217;: the plot shows P(+) and P(&minus;), the probabilities of the two outcomes.</li>
+                <li>Press <strong>&#9654; PLAY</strong>. Watch each coefficient rotate in the complex plane at its own angular frequency.</li>
+                <li>Compare with the <strong>Relative phase</strong> view: in a frame that rotates with c&#8321;, only c&#8322; moves, and it moves at &omega;&#8322;&#8321; = (E&#8322; &minus; E&#8321;)/&hbar;.</li>
+                <li>Use <strong>1 / 2 / 4 VIEWS</strong> and each pane's menu to choose what is on screen.</li>
+            </ol>
+
+            <h2>THE PHYSICS</h2>
+            <h3>1. Stationary states and their phases</h3>
+            <p><strong>Assumption:</strong> the Hamiltonian is time independent. That is what makes the energy eigenstates stationary states and gives each coefficient the simple phase factor e<sup>&minus;iE<sub>n</sub>t/&hbar;</sup>. Changing E&#8321;, E&#8322; or the eigenstates is not a time-dependent H: it defines a new H and restarts the clock at t = 0.</p>
+            <p>By default the energy eigenstates are |E&#8321;&#10217; = |+&#10217;<sub>z</sub> with energy E&#8321; and |E&#8322;&#10217; = |&minus;&#10217;<sub>z</sub> with energy E&#8322; (a spin in a magnetic field along z). The small <strong>|&plusmn;&#10217;<sub>z</sub> &#9998;</strong> button in the ENERGIES panel changes them to |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub>, or |&plusmn;&#10217;<sub>n</sub> for any direction n&#770; = (&theta;, &phi;). Writing |1&#10217; = |E&#8321;&#10217; and |2&#10217; = |E&#8322;&#10217;, the Schr&ouml;dinger equation gives</p>
+            <div class="formula">|&psi;(t)&#10217; = c&#8321;(0) e<sup>&minus;iE&#8321;t/&hbar;</sup> |1&#10217; + c&#8322;(0) e<sup>&minus;iE&#8322;t/&hbar;</sup> |2&#10217;</div>
+            <p>Each coefficient keeps its magnitude and only its phase changes. Writing c<sub>n</sub>(t) = |c<sub>n</sub>| e<sup>i&phi;<sub>n</sub>(t)</sup>,</p>
+            <div class="formula">&phi;<sub>n</sub>(t) = &phi;<sub>n</sub>(0) &minus; &omega;<sub>n</sub> t,&nbsp;&nbsp;&nbsp; &omega;<sub>n</sub> = E<sub>n</sub>/&hbar;,&nbsp;&nbsp;&nbsp; T<sub>n</sub> = 2&pi;/|&omega;<sub>n</sub>|</div>
+            <p>So each coefficient is a <strong>phasor</strong>: an arrow of fixed length |c<sub>n</sub>| turning in the complex plane at angular frequency &omega;<sub>n</sub>. Because of the minus sign, a positive energy turns the arrow <strong>clockwise</strong>. A negative energy turns it counter-clockwise.</p>
+
+            <h3>2. The phase convention</h3>
+            <p>An overall phase has no physical meaning, so it is chosen to make <strong>c&#8321;(0) real and non-negative</strong>. The initial state is then set by just two numbers, both belonging to c&#8322;:</p>
+            <div class="formula">c&#8322;(0) = |c&#8322;| e<sup>i&phi;&#8322;</sup>,&nbsp;&nbsp;&nbsp; c&#8321;(0) = &radic;(1 &minus; |c&#8322;|&sup2;)</div>
+            <p>In terms of the spin direction (&theta; from the z axis, &phi; around from the x axis) this is c&#8321; = cos(&theta;/2), c&#8322; = sin(&theta;/2) e<sup>i&phi;</sup>. The six buttons are the usual special cases:</p>
+            <table class="sym">
+                <tr><td>|+&#10217;<sub>z</sub> = |1&#10217;</td><td>|&minus;&#10217;<sub>z</sub> = |2&#10217;</td></tr>
+                <tr><td>|+&#10217;<sub>x</sub> = (|1&#10217; + |2&#10217;)/&radic;2</td><td>|&minus;&#10217;<sub>x</sub> = (|1&#10217; &minus; |2&#10217;)/&radic;2</td></tr>
+                <tr><td>|+&#10217;<sub>y</sub> = (|1&#10217; + i|2&#10217;)/&radic;2</td><td>|&minus;&#10217;<sub>y</sub> = (|1&#10217; &minus; i|2&#10217;)/&radic;2</td></tr>
+            </table>
+            <p>The convention fixes the phase only at t = 0. As time runs, c&#8321;(t) turns away from the real axis like any other coefficient.</p>
+            <p><strong>If the energy eigenstates are not |&plusmn;&#10217;<sub>z</sub>,</strong> the initial state is still entered in the z basis with this convention, and the coefficients that evolve are c<sub>n</sub>(0) = &#10216;E<sub>n</sub>|&psi;(0)&#10217;. These are shown in the equation above the views and are generally complex. |&plusmn;&#10217;<sub>n</sub> are written with the same convention: |+&#10217;<sub>n</sub> = cos(&theta;/2)|+&#10217;<sub>z</sub> + sin(&theta;/2)e<sup>i&phi;</sup>|&minus;&#10217;<sub>z</sub> and |&minus;&#10217;<sub>n</sub> = sin(&theta;/2)|+&#10217;<sub>z</sub> &minus; cos(&theta;/2)e<sup>i&phi;</sup>|&minus;&#10217;<sub>z</sub>.</p>
+
+            <h3>3. Probabilities in the energy basis do not change</h3>
+            <p>|c<sub>n</sub>(t)|&sup2; = |c<sub>n</sub>(0)|&sup2; for all t. The arrows never change length, so the probability of measuring E&#8321; or E&#8322; is constant. The <strong>Time plots</strong> view shows Re and Im parts oscillating while |c&#8321;|&sup2; and |c&#8322;|&sup2; stay flat.</p>
+
+            <h3>4. Global phase versus relative phase</h3>
+            <p>Multiplying the whole state by one overall phase e<sup>i&alpha;</sup> changes nothing measurable. Factor out c&#8321;'s phase:</p>
+            <div class="formula">|&psi;(t)&#10217; = e<sup>i&phi;&#8321;(t)</sup> [ |c&#8321;| |1&#10217; + |c&#8322;| e<sup>i&Delta;&phi;(t)</sup> |2&#10217; ],&nbsp;&nbsp;&nbsp; &Delta;&phi;(t) = &Delta;&phi;(0) &minus; &omega;&#8322;&#8321; t</div>
+            <div class="formula">&omega;&#8322;&#8321; = (E&#8322; &minus; E&#8321;)/&hbar;,&nbsp;&nbsp;&nbsp; T&#8322;&#8321; = 2&pi;/|&omega;&#8322;&#8321;|</div>
+            <p>Only the <strong>relative phase</strong> &Delta;&phi; is physical, and it evolves at the difference frequency. The <strong>Relative phase</strong> view shows this in a frame that rotates with c&#8321;: c&#8321; stands still and c&#8322; turns at &omega;&#8322;&#8321;. Try <strong>BOTH E + 1</strong>: both arrows speed up, but &Delta;&phi; and every measurable quantity are unchanged. Adding a constant to the Hamiltonian is unobservable.</p>
+
+            <h3>5. What does oscillate: measurement probabilities</h3>
+            <p>Choose a measurement basis |&plusmn;&#10217; (|&plusmn;&#10217;<sub>z</sub>, |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub> or |&plusmn;&#10217;<sub>n</sub>). The probabilities of the two outcomes are</p>
+            <div class="formula">P(+) = |&#10216;+|&psi;(t)&#10217;|&sup2;,&nbsp;&nbsp;&nbsp; P(&minus;) = |&#10216;&minus;|&psi;(t)&#10217;|&sup2;,&nbsp;&nbsp;&nbsp; P(+) + P(&minus;) = 1</div>
+            <p>If the measurement basis is the energy eigenbasis, both are constant. For any other basis they contain an interference term that depends on &Delta;&phi;, so they oscillate at &omega;&#8322;&#8321; (the Bohr frequency), not at &omega;&#8321; or &omega;&#8322;. For example, with energy eigenstates |&plusmn;&#10217;<sub>z</sub> and measurement basis |&plusmn;&#10217;<sub>x</sub>:</p>
+            <div class="formula">P(+x) = &frac12; + |c&#8321;||c&#8322;| cos &Delta;&phi;(t)</div>
+            <p>If |&psi;(0)&#10217; is itself an energy eigenstate, no probability changes at all: a stationary state has no time dependence in any observable.</p>
+
+            <h3>6. The Bloch sphere</h3>
+            <p>With the convention above, cos(&theta;/2) = |c&#8321;|, sin(&theta;/2) = |c&#8322;|, and the azimuth is &phi; = &Delta;&phi;. The Bloch vector is (&#10216;&sigma;<sub>x</sub>&#10217;, &#10216;&sigma;<sub>y</sub>&#10217;, &#10216;&sigma;<sub>z</sub>&#10217;) = (2|c&#8321;||c&#8322;| cos &Delta;&phi;, 2|c&#8321;||c&#8322;| sin &Delta;&phi;, |c&#8321;|&sup2; &minus; |c&#8322;|&sup2;), with |+&#10217;<sub>z</sub> at the north pole. Time evolution is a <strong>precession about the energy axis</strong> (drawn in orange and blue, labeled E&#8321; and E&#8322;; the z axis by default) at &omega;&#8322;&#8321;: the latitude (the probabilities |c<sub>n</sub>|&sup2;) is fixed and only the longitude (the relative phase) changes. The green and yellow dots mark |+&#10217; and |&minus;&#10217; of the measurement basis. If the state vector makes an angle &gamma; with the green dot, then P(+) = cos&sup2;(&gamma;/2) and P(&minus;) = sin&sup2;(&gamma;/2).</p>
+
+            <h3>Units</h3>
+            <p>The <strong>UNITS</strong> toggle (in DISPLAY OPTIONS) chooses between two systems. <strong>eV &amp; fs</strong> (the default) uses &hbar; = 0.6582 eV&middot;fs, so 1 eV corresponds to &omega; = 1.519 rad/fs and a period T = h/E = 4.136 fs. With E&#8321; = 1 eV and E&#8322; = 2.5 eV, T&#8321; = 4.14 fs, T&#8322; = 1.65 fs and T&#8322;&#8321; = 2.76 fs; a 1.5 eV gap is a near-infrared photon, the scale of atomic transitions. <strong>&hbar; = 1</strong> is dimensionless: energies in a unit E&#8320;, angular frequencies in E&#8320;/&hbar; and time in &hbar;/E&#8320;, so &omega; equals E numerically. Switching keeps the energy numbers and resets t to 0; the motion looks the same, only the time scale changes.</p>
+
+            <h2>CONTROLS</h2>
+            <ul>
+                <li><strong>Initial state:</strong> the six buttons choose |&plusmn;&#10217;<sub>z</sub>, |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub>. <strong>(&theta;, &phi;)</strong> opens sliders for a direction in space, in units of &pi;. <strong>|c&#8322;|, &phi;&#8322;</strong> opens sliders for the |&minus;&#10217;<sub>z</sub> coefficient directly, and the |+&#10217;<sub>z</sub> coefficient follows from normalization. The two slider modes describe the same state, so switching between them keeps it.</li>
+                <li><strong>Measurement basis:</strong> |&plusmn;&#10217;<sub>z</sub>, |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub> or |&plusmn;&#10217;<sub>n</sub>(&theta;, &phi;). The Measurement probabilities view plots P(+) and P(&minus;); its &minus;/+ buttons zoom the time axis.</li>
+                <li><strong>Resetting the clock:</strong> changing the initial state, the energy eigenstates or an energy sets t back to 0. Changing the measurement basis does not, because it only changes what is being measured.</li>
+                <li><strong>Define Hamiltonian:</strong> the DEFINE HAMILTONIAN panel starts collapsed and shows a summary of the eigenstates and energies; click it to open it in place. <strong>EIGENSTATES</strong> opens a pop-up to choose |&plusmn;&#10217;<sub>z</sub> (default), |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub> or |&plusmn;&#10217;<sub>n</sub>(&theta;, &phi;). <strong>MATRIX REPRESENTATION</strong> shows H as a 2&times;2 matrix in the z, x or y basis (or n, when the eigenstates are |&plusmn;&#10217;<sub>n</sub>). The level diagram labels each line with its ket. Changing the eigenstates resets t to 0.</li>
+                <li><strong>Energies:</strong> E&#8321;, E&#8322; from &minus;3 to 5. The panel lists &omega;&#8321;, &omega;&#8322;, &omega;&#8322;&#8321; and the matching periods. BOTH E &plusmn; 1 shifts the zero of energy.</li>
+                <li><strong>Time:</strong> PLAY/PAUSE (or SPACE), reset to t = 0, step forward or back, and jump ahead by exactly one period T&#8321;, T&#8322; or T&#8322;&#8321;. Every arrow that period belongs to returns to where it started.</li>
+                <li><strong>Display:</strong> TRAILS show where each arrow was a moment ago. PHASE ARCS mark each phase angle from the real axis. &omega; ARROWS show the sense and rate of rotation, with the arc length proportional to &omega;. PROJECTIONS drop the Re/Im components onto the axes, and on the Bloch sphere drop the vector onto the equator.</li>
+                <li><strong>Views:</strong> Rotating phasors, Relative phase, Bloch sphere, Measurement probabilities. Any pane can show any view.</li>
+                <li><strong>Presentation tools:</strong> SET TO FULL SCREEN (top left), a laser pointer and a markerboard for drawing over the screen.</li>
+            </ul>
+
+            <h2>THINGS TO TRY</h2>
+            <ol>
+                <li>Start in |+&#10217;<sub>z</sub>. The arrow turns, but does anything measurable change? Try every measurement basis.</li>
+                <li>Start in |+&#10217;<sub>x</sub> and measure in the x basis. Pause and press + T&#8321;. Which arrow returns to its starting position? Reset and press + T&#8322;&#8321;. What returns now, and what is P(+)?</li>
+                <li>Start in |+&#10217;<sub>x</sub> and compare the x and y measurement bases. How are the two P(+) curves shifted relative to each other? Why?</li>
+                <li>Set E&#8322; = 2E&#8321;. How many turns does c&#8322; make while c&#8321; makes one?</li>
+                <li>Press BOTH E + 1. Which views change and which do not? Why?</li>
+                <li>Make E&#8321; negative. Which way does c&#8321; turn now?</li>
+                <li>Slide E&#8322; toward E&#8321;. What happens to T&#8322;&#8321; and to the oscillation of P(+)?</li>
+                <li>Start in |+&#10217;<sub>z</sub>, measure in the z basis, and change the energy eigenstates to |&plusmn;&#10217;<sub>x</sub>. Why do P(+) and P(&minus;) now swap back and forth between 1 and 0? Watch the Bloch sphere.</li>
+                <li>Use (&theta;, &phi;) to start at &theta; = 0.25&pi; and measure in the x basis. What is the largest P(+)? Check your answer on the Bloch sphere.</li>
+            </ol>
+
+            <h2>CREDITS &amp; LICENSE</h2>
+            <p style="text-align:center; line-height:1.8;">
+                <strong>Larry Engelhardt</strong>, Francis Marion University<br>
+                Built with Claude Opus 5.5, 2026. Layout, styling and presentation tools adapted from the<br>
+                <em>Electric Charge Simulator</em> v7.02 by Mehmet Fatih Tasar, Georgia State University.
+            </p>
+            <p style="text-align:center;">
+                <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener" style="color:#3498DB; font-weight:bold;">This work is licensed under a CC BY-NC-SA 4.0 International License</a>.
+            </p>
+        </div>
+        <div class="info-modal-footer">
+            <button class="info-modal-close-btn" id="infoModalCloseBtn">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const PI = Math.PI, TAU = 2*Math.PI;
+    const COL = { c1:'#ff9a3c', c2:'#38bdf8', rel:'#e879f9', pp:'#4ade80', pm:'#facc15', grid:'#1c2940', axis:'#5b6b88',
+                  text:'#d6deea', dim:'#8391a7', state:'#f8fafc' };
+    const VIEWS = [
+        { key:'phasor',   label:'◔ Rotating phasors' },
+        { key:'relative', label:'∠ Relative phase' },
+        { key:'bloch',    label:'◎ Bloch sphere' },
+        { key:'plots',    label:'∿ Measurement probabilities' }
+    ];
+    const YAW0 = -1.92, PITCH0 = 0.32;
+    const MIN_VIEW_W = 340;
+
+    // ---------- state ----------
+    const S = {
+        // c1(0) is real and >= 0 by convention, so each state is set by |c2| and its phase (in [0, 2pi))
+        init: { m2: Math.SQRT1_2, ph2: 0, pick: 'px' },     // initial state |psi(0)>
+        meas: { pick: 'x', th: PI/4, ph: 0 },              // measurement basis |+>m, |->m
+        basis: { pick: 'z', th: PI/4, ph: 0 },            // energy eigenbasis: |E1> = |+>n, |E2> = |->n
+        E1: 1, E2: 2.5,                          // energies, hbar = 1
+        t: 0, playing: false, speed: 0.5,
+        tZoom: 1,                                         // time-plot zoom (shared by every plot)
+        layout: 4, trails: true, arcs: true, omegaLbl: true, proj: false,
+        units: 'eVfs', matBasis: 'z',
+        yaw: YAW0, pitch: PITCH0
+    };
+
+    // ---------- helpers ----------
+    function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+    function wrap(a){ return ((a + PI) % TAU + TAU) % TAU - PI; }
+    function fmt(v, d){
+        if (!isFinite(v)) return '∞';
+        const s = v.toFixed(d);
+        return parseFloat(s) === 0 ? (0).toFixed(d) : s.replace('-', '−');
+    }
+    function fmtPi(a){ return fmt(a/PI, 2) + 'π'; }
+    function fmtC(re, im, d){
+        d = d || 3;
+        const neg = parseFloat(im.toFixed(d)) < 0;
+        return fmt(re, d) + (neg ? ' − ' : ' + ') + fmt(Math.abs(im), d) + 'i';
+    }
+    // ---- complex 2-vectors in the z basis: [[re, im], [re, im]] ----
+    function zVec(tg){                       // a picker state: |+z> coefficient real and >= 0
+        const a2 = clamp(tg.m2, 0, 1), a1 = Math.sqrt(Math.max(0, 1 - a2*a2));
+        return [[a1, 0], [a2*Math.cos(tg.ph2), a2*Math.sin(tg.ph2)]];
+    }
+    function inner(u, v){                    // <u|v>
+        return [u[0][0]*v[0][0] + u[0][1]*v[0][1] + u[1][0]*v[1][0] + u[1][1]*v[1][1],
+                u[0][0]*v[0][1] - u[0][1]*v[0][0] + u[1][0]*v[1][1] - u[1][1]*v[1][0]];
+    }
+    function labBloch(u){                    // Bloch vector of a z-basis 2-vector
+        const re = u[0][0]*u[1][0] + u[0][1]*u[1][1], im = u[0][0]*u[1][1] - u[0][1]*u[1][0];   // conj(u1) u2
+        return { x: 2*re, y: 2*im, z: u[0][0]**2 + u[0][1]**2 - u[1][0]**2 - u[1][1]**2 };
+    }
+    // energy eigenstates in the z basis
+    const R2 = Math.SQRT1_2;
+    // |+>a, |->a for an axis choice { pick: 'z' | 'x' | 'y' | 'n', th, ph }, |+z> coefficients real and >= 0
+    const AXIS_FIXED = {
+        z: [[[1, 0], [0, 0]], [[0, 0], [1, 0]]],
+        x: [[[R2, 0], [R2, 0]], [[R2, 0], [-R2, 0]]],
+        y: [[[R2, 0], [0, R2]], [[R2, 0], [0, -R2]]]
+    };
+    function axisVecs(tg){
+        if (tg.pick !== 'n') return AXIS_FIXED[tg.pick];
+        const c = Math.cos(tg.th/2), s = Math.sin(tg.th/2), cf = Math.cos(tg.ph), sf = Math.sin(tg.ph);
+        return [[[c, 0], [s*cf, s*sf]], [[s, 0], [-c*cf, -c*sf]]];
+    }
+    function eVecs(){ return axisVecs(S.basis); }
+    // lab directions of the energy-frame axes: x' <-> (E1+E2)/sqrt2, y' <-> (E1+iE2)/sqrt2, z' <-> E1
+    function eFrame(){
+        const [e1, e2] = eVecs();
+        const add = (u, v, k) => [[ (u[0][0] + k[0]*v[0][0] - k[1]*v[0][1])*R2, (u[0][1] + k[0]*v[0][1] + k[1]*v[0][0])*R2 ],
+                                  [ (u[1][0] + k[0]*v[1][0] - k[1]*v[1][1])*R2, (u[1][1] + k[0]*v[1][1] + k[1]*v[1][0])*R2 ]];
+        return { U: labBloch(add(e1, e2, [1, 0])), V: labBloch(add(e1, e2, [0, 1])), N: labBloch(e1) };
+    }
+    function toLab(b, F){
+        return { x: b.x*F.U.x + b.y*F.V.x + b.z*F.N.x, y: b.x*F.U.y + b.y*F.V.y + b.z*F.N.y, z: b.x*F.U.z + b.y*F.V.z + b.z*F.N.z };
+    }
+    // energy-basis coefficients c_n(0) = <E_n|psi(0)>
+    function coeffs0(){
+        const [e1, e2] = eVecs(), psi = zVec(S.init);
+        return [inner(e1, psi), inner(e2, psi)];
+    }
+    function mags(){ const [c1, c2] = coeffs0(); return [Math.hypot(...c1), Math.hypot(...c2)]; }
+    // units: energies in eV and time in fs (hbar = 0.6582 eV fs), or dimensionless with hbar = 1
+    const UNITS = {
+        eVfs: { hbar: 0.6582119569, E: ' eV', t: ' fs', tAxis: 't (fs)', w: 'rad/fs', Eunit: '(eV)', hbarNote: 'ħ = 0.658 eV·fs', speed: 'fs' },
+        nat:  { hbar: 1,            E: '',    t: '',    tAxis: 't (ħ/E₀)', w: 'E₀/ħ', Eunit: '(units of E₀)', hbarNote: 'ħ = 1', speed: 'time units' }
+    };
+    const U = () => UNITS[S.units];
+    function period(w){ return Math.abs(w) < 1e-9 ? Infinity : TAU/Math.abs(w); }
+    function w1(){ return S.E1/U().hbar; }
+    function w2(){ return S.E2/U().hbar; }
+    function w21(){ return (S.E2 - S.E1)/U().hbar; }
+    function state(t){
+        const [c1, c2] = coeffs0(), m1 = Math.hypot(...c1), m2 = Math.hypot(...c2);
+        const p1 = Math.atan2(c1[1], c1[0]) - w1()*t, p2 = Math.atan2(c2[1], c2[0]) - w2()*t;
+        return { m1, m2, p1, p2, dphi: p2 - p1,
+                 re1: m1*Math.cos(p1), im1: m1*Math.sin(p1),
+                 re2: m2*Math.cos(p2), im2: m2*Math.sin(p2) };
+    }
+    // psi(t) in the z basis: c1(t)|E1> + c2(t)|E2>
+    function psiZ(st){
+        const [e1, e2] = eVecs();
+        const comp = i => [st.re1*e1[i][0] - st.im1*e1[i][1] + st.re2*e2[i][0] - st.im2*e2[i][1],
+                           st.re1*e1[i][1] + st.im1*e1[i][0] + st.re2*e2[i][1] + st.im2*e2[i][0]];
+        return [comp(0), comp(1)];
+    }
+    // measurement probabilities [P(+m), P(-m)] = |<+-m|psi(t)>|^2
+    function measProbs(st){
+        const [m1, m2] = axisVecs(S.meas), z = psiZ(st), a = inner(m1, z), b = inner(m2, z);
+        return [a[0]*a[0] + a[1]*a[1], b[0]*b[0] + b[1]*b[1]];
+    }
+    function measAxis(){ return labBloch(axisVecs(S.meas)[0]); }
+    function blochVec(st){
+        const k = 2*st.m1*st.m2;
+        return { x: k*Math.cos(st.dphi), y: k*Math.sin(st.dphi), z: st.m1*st.m1 - st.m2*st.m2 };
+    }
+    function stepSize(){
+        const ws = [w1(), w2(), w21()].map(Math.abs).filter(w => w > 1e-9);
+        return ws.length ? (TAU/Math.max(...ws))/24 : 0.25;
+    }
+
+    // ---------- canvas plumbing ----------
+    function fitCanvas(c){
+        const r = c.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+        const bw = Math.round(w*dpr), bh = Math.round(h*dpr);
+        if (c.width !== bw || c.height !== bh){ c.width = bw; c.height = bh; }
+        const ctx = c.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        return { ctx, w, h };
+    }
+    function txt(ctx, s, x, y, col, size, align, base, weight){
+        ctx.font = (weight || 700) + ' ' + size + 'px "Exo 2", sans-serif';
+        ctx.fillStyle = col; ctx.textAlign = align || 'left'; ctx.textBaseline = base || 'alphabetic';
+        ctx.fillText(s, x, y);
+    }
+    function line(ctx, x0, y0, x1, y1, col, lw, dash){
+        ctx.strokeStyle = col; ctx.lineWidth = lw || 1; ctx.setLineDash(dash || []);
+        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.setLineDash([]);
+    }
+    function head(ctx, x0, y0, x1, y1, col, hs){
+        const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy); if (L < 1e-6) return;
+        const ux = dx/L, uy = dy/L;
+        ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x1, y1);
+        ctx.lineTo(x1 - ux*hs - uy*hs*0.5, y1 - uy*hs + ux*hs*0.5);
+        ctx.lineTo(x1 - ux*hs + uy*hs*0.5, y1 - uy*hs - ux*hs*0.5);
+        ctx.closePath(); ctx.fill();
+    }
+    function arrow(ctx, x0, y0, x1, y1, col, lw, hs){
+        const L = Math.hypot(x1 - x0, y1 - y0); if (L < 1) return;
+        const h = Math.min(hs, L*0.45), ux = (x1 - x0)/L, uy = (y1 - y0)/L;
+        line(ctx, x0, y0, x1 - ux*h*0.7, y1 - uy*h*0.7, col, lw);
+        head(ctx, x0, y0, x1, y1, col, h);
+    }
+    // arc in MATH angles (counter-clockwise positive, y up) about (cx, cy)
+    function mathArc(ctx, cx, cy, r, a0, a1, col, lw, dash){
+        if (Math.abs(a1 - a0) < 1e-4) return;
+        ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []);
+        ctx.beginPath(); ctx.arc(cx, cy, r, -a0, -a1, a1 > a0); ctx.stroke(); ctx.setLineDash([]);
+    }
+    function arcArrow(ctx, cx, cy, r, a0, a1, col, lw){
+        mathArc(ctx, cx, cy, r, a0, a1, col, lw);
+        const s = Math.sign(a1 - a0), d = Math.min(Math.abs(a1 - a0)*0.6, 9/r);
+        const b = a1 - s*d;
+        head(ctx, cx + r*Math.cos(b), cy - r*Math.sin(b), cx + r*Math.cos(a1), cy - r*Math.sin(a1), col, 8);
+    }
+    function frameLabel(ctx, w, s){ txt(ctx, s, 10, 18, COL.dim, 12.5, 'left', 'alphabetic', 700); }
+    // one-line equation from segments { s, sup, col }, centered at x and shrunk to fit maxW
+    function drawEq(ctx, segs, x, y, maxW, size, align){
+        const font = (g, f) => '800 ' + (g.sup || g.sub ? f*0.68 : f) + 'px "Exo 2", sans-serif';
+        const width = f => segs.reduce((a, g) => { ctx.font = font(g, f); return a + ctx.measureText(g.s).width; }, 0);
+        let fs = size;
+        while (fs > 9 && width(fs) > maxW) fs -= 0.5;
+        const wd = width(fs);
+        let cx = align === 'left' ? x : align === 'right' ? x - wd : x - wd/2;
+        ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+        for (const g of segs){
+            ctx.font = font(g, fs); ctx.fillStyle = g.col || COL.text;
+            ctx.fillText(g.s, cx, g.sup ? y - fs*0.45 : g.sub ? y + fs*0.22 : y);
+            cx += ctx.measureText(g.s).width;
+        }
+        return wd;
+    }
+
+    // ---------- VIEW: complex plane (phasors and relative phase) ----------
+    function drawPlane(p, relative){
+        const { ctx, w, h } = p;
+        const frame = relative ? 'c1' : 'lab';
+        const cx = w/2, cy = h/2 + 14, R = Math.min(w, h)*0.31;
+        const X = re => cx + R*re, Y = im => cy - R*im;
+
+        // grid, axes, unit circle
+        for (const g of [-1, -0.5, 0.5, 1]){
+            line(ctx, X(g), Y(-1.25), X(g), Y(1.25), COL.grid, 1);
+            line(ctx, X(-1.25), Y(g), X(1.25), Y(g), COL.grid, 1);
+        }
+        line(ctx, X(-1.3), cy, X(1.3), cy, COL.axis, 1.4);
+        line(ctx, cx, Y(-1.3), cx, Y(1.3), COL.axis, 1.4);
+        ctx.strokeStyle = COL.axis; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+        txt(ctx, 'Re', X(1.3) - 2, cy - 6, COL.dim, 12, 'right');
+        txt(ctx, 'Im', cx + 6, Y(1.3) + 10, COL.dim, 12, 'left');
+        txt(ctx, '1', X(1) + 4, cy + 13, COL.dim, 11); txt(ctx, '−1', X(-1) - 4, cy + 13, COL.dim, 11, 'right');
+        txt(ctx, 'i', cx + 5, Y(1) - 4, COL.dim, 11); txt(ctx, '−i', cx + 5, Y(-1) + 13, COL.dim, 11);
+
+        const st = state(S.t), sb = S.basis.pick;
+        const rot = frame === 'c1' ? w1()*S.t : 0;          // multiply by e^{+iE1 t} in the rotating frame
+        const W21 = w21();
+        const arrows = [
+            { m: st.m1, ph: st.p1 + rot, col: COL.c1, name: 'c₁', w: frame === 'c1' ? 0 : w1(),
+              wName: 'ω₁', phName: 'φ₁' },
+            { m: st.m2, ph: st.p2 + rot, col: COL.c2, name: 'c₂', w: frame === 'c1' ? W21 : w2(),
+              wName: frame === 'c1' ? 'ω₂₁' : 'ω₂', phName: 'φ₂' }
+        ];
+
+        // trails: analytic past positions (phase at t - dt is ph + w*dt)
+        if (S.trails){
+            const wMax = Math.max(0.25, ...arrows.map(a => Math.abs(a.w)));
+            const tau = 1.4/wMax, N = 36;
+            for (const a of arrows){
+                if (a.m < 0.02 || Math.abs(a.w) < 1e-9) continue;
+                for (let k = N; k >= 1; k--){
+                    const q0 = a.ph + a.w*tau*k/N, q1 = a.ph + a.w*tau*(k - 1)/N;
+                    ctx.globalAlpha = 0.55*(1 - k/N);
+                    mathArc(ctx, cx, cy, R*a.m, Math.min(q0, q1), Math.max(q0, q1), a.col, 5);
+                }
+                ctx.globalAlpha = 1;
+            }
+        }
+        // orbit circles
+        for (const a of arrows){
+            if (a.m < 0.02) continue;
+            ctx.globalAlpha = 0.45; ctx.strokeStyle = a.col; ctx.lineWidth = 1; ctx.setLineDash([4, 5]);
+            ctx.beginPath(); ctx.arc(cx, cy, R*a.m, 0, TAU); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+        }
+        // phase arcs from the +Re axis
+        if (S.arcs && !relative){
+            arrows.forEach((a, i) => {
+                if (a.m < 0.02) return;
+                const r = R*(0.16 + 0.1*i), pw = wrap(a.ph);
+                mathArc(ctx, cx, cy, r, 0, pw, a.col, 2);
+                const mid = pw/2, lr = r + 12;
+                txt(ctx, a.phName, cx + lr*Math.cos(mid), cy - lr*Math.sin(mid), a.col, 12.5, 'center', 'middle', 800);
+            });
+        }
+        // relative phase arc between the arrows
+        if (relative && st.m1 > 0.02 && st.m2 > 0.02){
+            const a0 = arrows[0].ph, d = wrap(arrows[1].ph - arrows[0].ph), r = R*0.26;
+            mathArc(ctx, cx, cy, r, a0, a0 + d, COL.rel, 3);
+            const mid = a0 + d/2, lr = r + 16;
+            txt(ctx, 'Δφ', cx + lr*Math.cos(mid), cy - lr*Math.sin(mid), COL.rel, 14, 'center', 'middle', 800);
+        }
+        // projections onto the axes
+        if (S.proj){
+            for (const a of arrows){
+                if (a.m < 0.02) continue;
+                const re = a.m*Math.cos(a.ph), im = a.m*Math.sin(a.ph);
+                line(ctx, X(re), Y(im), X(re), cy, a.col, 1.2, [3, 3]);
+                line(ctx, X(re), Y(im), cx, Y(im), a.col, 1.2, [3, 3]);
+                ctx.fillStyle = a.col;
+                ctx.beginPath(); ctx.arc(X(re), cy, 3.5, 0, TAU); ctx.fill();
+                ctx.beginPath(); ctx.arc(cx, Y(im), 3.5, 0, TAU); ctx.fill();
+            }
+        }
+        // the phasors
+        for (const a of arrows){
+            const tx = X(a.m*Math.cos(a.ph)), ty = Y(a.m*Math.sin(a.ph));
+            if (a.m >= 0.01) arrow(ctx, cx, cy, tx, ty, a.col, 3.5, 13);
+            const lr = R*a.m + 16;
+            if (a.m >= 0.02) txt(ctx, a.name, cx + lr*Math.cos(a.ph), cy - lr*Math.sin(a.ph), a.col, 14, 'center', 'middle', 800);
+        }
+        // angular-frequency arrows (arc length proportional to omega, drawn beyond the tip)
+        if (S.omegaLbl){
+            for (const a of arrows){
+                if (a.m < 0.05) continue;
+                const r = R*a.m + 32;
+                if (Math.abs(a.w) < 1e-9){
+                    if (relative && frame === 'c1' && a === arrows[0])
+                        txt(ctx, 'at rest', cx + r*Math.cos(a.ph), cy - r*Math.sin(a.ph), a.col, 11.5, 'center', 'middle', 700);
+                    continue;
+                }
+                const span = clamp(0.28*Math.abs(a.w), 0.12, 1.3)*Math.sign(-a.w);   // e^{-iEt}: E>0 turns clockwise
+                arcArrow(ctx, cx, cy, r, a.ph, a.ph + span, a.col, 2.2);
+                const lr = r + 14, m = a.ph + span*0.5;
+                // keep the label clear of the equation (top) and the caption line (bottom)
+                txt(ctx, a.wName + ' = ' + fmt(a.w, 2), cx + lr*Math.cos(m), clamp(cy - lr*Math.sin(m), 54, h - 30), a.col, 12, 'center', 'middle', 800);
+            }
+        }
+        // captions
+        if (!relative){
+            drawEq(ctx, [ { s: '|ψ(t)⟩ = ' },
+                { s: 'c₁e', col: COL.c1 }, { s: '−iω₁t', sup: true, col: COL.c1 }, { s: '|+⟩', col: COL.c1 }, { s: sb, sub: true, col: COL.c1 }, { s: '  +  ' },
+                { s: 'c₂e', col: COL.c2 }, { s: '−iω₂t', sup: true, col: COL.c2 }, { s: '|−⟩', col: COL.c2 }, { s: sb, sub: true, col: COL.c2 } ], w/2, 24, w - 16, 16);
+            txt(ctx, 'each term turns at its own ω', w/2, 42, COL.dim, 11.5, 'center', 'alphabetic', 700);
+            const s1 = st.m1 > 0.02 ? 'φ₁ = ' + fmtPi(wrap(st.p1)) : 'φ₁ undefined';
+            const s2 = st.m2 > 0.02 ? 'φ₂ = ' + fmtPi(wrap(st.p2)) : 'φ₂ undefined';
+            txt(ctx, s1, 10, h - 10, COL.c1, 13, 'left', 'alphabetic', 800);
+            ctx.font = '800 13px "Exo 2", sans-serif';
+            txt(ctx, s2, 22 + ctx.measureText(s1).width, h - 10, COL.c2, 13, 'left', 'alphabetic', 800);
+        } else {
+            drawEq(ctx, [ { s: '|ψ(t)⟩ = ' }, { s: 'e', col: COL.dim }, { s: '−iω₁t', sup: true, col: COL.dim }, { s: ' [ ' },
+                { s: 'c₁|+⟩', col: COL.c1 }, { s: sb, sub: true, col: COL.c1 }, { s: '  +  ' },
+                { s: 'c₂e', col: COL.c2 }, { s: '−i(ω₂−ω₁)t', sup: true, col: COL.rel }, { s: '|−⟩', col: COL.c2 }, { s: sb, sub: true, col: COL.c2 }, { s: ' ]' } ], w/2, 24, w - 16, 16);
+            txt(ctx, frame === 'c1' ? 'global phase e^(−iω₁t) factored out: c₁ is frozen' : 'lab frame: angle between arrows = Δφ',
+                w/2, 42, COL.dim, 11.5, 'center', 'alphabetic', 700);
+            const ok = st.m1 > 0.02 && st.m2 > 0.02;
+            txt(ctx, (ok ? 'Δφ = ' + fmtPi(wrap(st.dphi)) : 'Δφ undefined') + '  ·  ω₂−ω₁ = ' + fmt(W21, 2),
+                10, h - 10, COL.rel, 13, 'left', 'alphabetic', 800);
+        }
+        txt(ctx, 't = ' + fmt(S.t, 2) + U().t, w - 10, h - 10, COL.text, 13, 'right', 'alphabetic', 800);
+    }
+
+    // ---------- VIEW: Bloch sphere ----------
+    function drawBloch(p){
+        const { ctx, w, h } = p;
+        const cx = w/2, cy = h/2 - 2, R = Math.min(w, h)*0.29;
+        const cyw = Math.cos(S.yaw), syw = Math.sin(S.yaw), cp = Math.cos(S.pitch), sp = Math.sin(S.pitch);
+        function P(x, y, z){
+            const x1 = x*cyw - y*syw, y1 = x*syw + y*cyw;
+            return { X: cx + R*x1, Y: cy - R*(z*cp + y1*sp), d: -y1*cp + z*sp };
+        }
+        const F = eFrame();
+        function E(x, y, z){ const v = toLab({ x, y, z }, F); return P(v.x, v.y, v.z); }   // energy-frame point
+        function curve(fn, n, col, lw, backAlpha, frontDash, proj){
+            const Q = proj || P;
+            for (let i = 0; i < n; i++){
+                const a = Q(...fn(i/n)), b = Q(...fn((i + 1)/n));
+                const front = a.d + b.d >= 0;
+                ctx.globalAlpha = front ? 1 : backAlpha;
+                line(ctx, a.X, a.Y, b.X, b.Y, col, lw, front ? (frontDash || []) : [3, 4]);
+            }
+            ctx.globalAlpha = 1;
+        }
+        // body
+        const g = ctx.createRadialGradient(cx - R*0.35, cy - R*0.4, R*0.1, cx, cy, R);
+        g.addColorStop(0, 'rgba(120,150,210,0.22)'); g.addColorStop(1, 'rgba(40,60,110,0.10)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill();
+        ctx.strokeStyle = COL.axis; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+        curve(s => [Math.cos(TAU*s), Math.sin(TAU*s), 0], 96, COL.axis, 1.3, 0.5);
+        curve(s => [Math.cos(TAU*s), 0, Math.sin(TAU*s)], 96, '#34425c', 1, 0.5);
+        curve(s => [0, Math.cos(TAU*s), Math.sin(TAU*s)], 96, '#34425c', 1, 0.5);
+        // axes
+        const axes = [[1,0,0,'x'], [0,1,0,'y'], [0,0,1,'|+⟩z'], [-1,0,0,''], [0,-1,0,''], [0,0,-1,'|−⟩z']];
+        const o = P(0, 0, 0);
+        for (const [x, y, z, lab] of axes){
+            const e = P(x*1.18, y*1.18, z*1.18);
+            ctx.globalAlpha = e.d >= 0 ? 1 : 0.45;
+            line(ctx, o.X, o.Y, e.X, e.Y, COL.dim, 1.2, e.d >= 0 ? [] : [3, 4]);
+            ctx.globalAlpha = 1;
+            if (lab){
+                if (z){ const L = P(0, 0, z*1.1); txt(ctx, lab, L.X + 8, L.Y, COL.text, 14, 'left', 'middle', 800); }
+                else { const L = P(x*1.32, y*1.32, 0); txt(ctx, lab, L.X, L.Y, COL.dim, 13, 'center', 'middle', 800); }
+            }
+        }
+        // energy axis: |E1> end orange, |E2> end blue
+        for (const [sg, col, lab] of [[1, COL.c1, 'E₁'], [-1, COL.c2, 'E₂']]){
+            const e = E(0, 0, sg*1.18);
+            ctx.globalAlpha = e.d >= 0 ? 1 : 0.5;
+            line(ctx, o.X, o.Y, e.X, e.Y, col, 2.2, e.d >= 0 ? [] : [4, 3]);
+            ctx.globalAlpha = 1;
+            txt(ctx, lab, e.X - 9, e.Y - 9, col, 13.5, 'right', 'middle', 800);
+        }
+        const st = state(S.t), b = blochVec(st), W21 = w21();       // b is in the energy frame
+        const rho = Math.hypot(b.x, b.y);
+        // precession path: circle about the energy axis
+        if (rho > 0.02) curve(s => [rho*Math.cos(TAU*s), rho*Math.sin(TAU*s), b.z], 96, COL.rel, 1.3, 0.35, [5, 4], E);
+        // trail
+        if (S.trails && rho > 0.02 && Math.abs(W21) > 1e-9){
+            const tau = 1.4/Math.max(0.25, Math.abs(W21)), N = 36;
+            for (let k = N; k >= 1; k--){
+                const q0 = st.dphi + W21*tau*k/N, q1 = st.dphi + W21*tau*(k - 1)/N;
+                const a = E(rho*Math.cos(q0), rho*Math.sin(q0), b.z), c = E(rho*Math.cos(q1), rho*Math.sin(q1), b.z);
+                ctx.globalAlpha = 0.6*(1 - k/N);
+                line(ctx, a.X, a.Y, c.X, c.Y, COL.rel, 5);
+            }
+            ctx.globalAlpha = 1;
+        }
+        // measurement axis: |+>m green, |->m yellow
+        const ma = measAxis();
+        for (const [sg, col, lab] of [[1, COL.pp, '+'], [-1, COL.pm, '−']]){
+            const mp = P(sg*ma.x, sg*ma.y, sg*ma.z);
+            ctx.globalAlpha = mp.d >= 0 ? 1 : 0.5;
+            line(ctx, o.X, o.Y, mp.X, mp.Y, col, 1.6, [2, 4]);
+            ctx.fillStyle = col; ctx.beginPath(); ctx.arc(mp.X, mp.Y, 6, 0, TAU); ctx.fill();
+            ctx.strokeStyle = '#0c1220'; ctx.lineWidth = 1.5; ctx.stroke();
+            txt(ctx, lab, mp.X + 10, mp.Y - 9, col, 15, 'center', 'middle', 800);
+            ctx.globalAlpha = 1;
+        }
+        const tip = E(b.x, b.y, b.z);
+        if (S.proj){
+            if (S.basis.pick !== 'z') curve(s => [Math.cos(TAU*s), Math.sin(TAU*s), 0], 96, COL.rel, 1, 0.3, [2, 3], E);
+            const foot = E(b.x, b.y, 0);
+            line(ctx, tip.X, tip.Y, foot.X, foot.Y, COL.text, 1.2, [3, 3]);
+            line(ctx, o.X, o.Y, foot.X, foot.Y, COL.rel, 1.5, [3, 3]);
+            if (rho > 0.02){
+                const d = wrap(st.dphi), n = 40;
+                curve(s => [0.32*Math.cos(d*s), 0.32*Math.sin(d*s), 0], n, COL.rel, 2.4, 0.6, undefined, E);
+            }
+        }
+        // omega arrow around the energy axis
+        if (S.omegaLbl && Math.abs(W21) > 1e-9){
+            const zc = Math.min(1.12, Math.max(b.z, -0.9) + 0.18), rr = 0.28, sgn = -Math.sign(W21);
+            const n = 30, q0 = st.dphi;
+            const pts = [];
+            for (let i = 0; i <= n; i++){ const q = q0 + sgn*1.6*i/n; pts.push(E(rr*Math.cos(q), rr*Math.sin(q), zc)); }
+            ctx.strokeStyle = COL.rel; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(pts[0].X, pts[0].Y);
+            for (const q of pts) ctx.lineTo(q.X, q.Y); ctx.stroke();
+            head(ctx, pts[n - 3].X, pts[n - 3].Y, pts[n].X, pts[n].Y, COL.rel, 8);
+        }
+        // state vector
+        ctx.globalAlpha = tip.d >= 0 ? 1 : 0.7;
+        arrow(ctx, o.X, o.Y, tip.X, tip.Y, COL.state, 3.5, 13);
+        ctx.fillStyle = COL.rel; ctx.beginPath(); ctx.arc(tip.X, tip.Y, 4.5, 0, TAU); ctx.fill();
+        ctx.globalAlpha = 1;
+        frameLabel(ctx, w, 'BLOCH SPHERE · dots = measurement basis · drag');
+        const theta = 2*Math.atan2(st.m2, st.m1);
+        txt(ctx, 'angle from E₁ axis = ' + fmtPi(theta) + '  (fixed)', 10, h - 28, COL.text, 12.5, 'left', 'alphabetic', 700);
+        txt(ctx, 'azimuth = Δφ = ' + (rho > 0.02 ? fmtPi(wrap(st.dphi)) : 'undefined') +
+                 '  · precesses at ω₂₁ = ' + fmt(W21, 2), 10, h - 10, COL.rel, 12.5, 'left', 'alphabetic', 800);
+    }
+
+    // ---------- VIEW: time plots ----------
+    function niceStep(raw){
+        for (const s of [0.05, 0.1, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100]) if (s >= raw) return s;
+        return 200;
+    }
+    function drawPlots(p){
+        const { ctx, w, h } = p;
+        const fin = [period(w1()), period(w2()), period(w21())].filter(isFinite);
+        const W = (fin.length ? clamp(2*Math.max(...fin), 4, 40) : 10)/S.tZoom;
+        // the axis starts at t = 0; once t passes the window width it scrolls with t at the right edge
+        const t1 = Math.max(W, S.t), t0 = t1 - W, tNow = Math.max(0, S.t);
+        const L = 42, Rm = 10, T = 30, B = 30;
+        const rowH = h - T - B, pw = w - L - Rm;
+        const X = tt => L + (tt - t0)/(t1 - t0)*pw;
+        const N = Math.max(240, Math.round(2*pw));
+        const samples = [];
+        for (let i = 0; i <= N; i++){
+            const tt = t0 + (tNow - t0)*i/N, st = state(tt);      // only the elapsed part, t0 ... now
+            st.tt = tt; st.P = measProbs(st);
+            samples.push(st);
+        }
+        const mb = S.meas.pick;
+        const ser = [ { f: s => s.P[0], col: COL.pp, sg: '+' }, { f: s => s.P[1], col: COL.pm, sg: '−' } ];
+        const tick = niceStep(W/6);
+        const cur = state(S.t); cur.P = measProbs(cur);
+        const xc = X(S.t), y0 = T;
+        const Y = v => y0 + (1 - v)*rowH;
+        for (let k = Math.ceil(t0/tick); k*tick <= t1; k++) line(ctx, X(k*tick), y0, X(k*tick), y0 + rowH, COL.grid, 1);
+        for (const v of [0, 0.25, 0.5, 0.75, 1]){
+            line(ctx, L, Y(v), L + pw, Y(v), COL.grid, 1);
+            txt(ctx, fmt(v, v === 0 || v === 1 ? 0 : 2), L - 5, Y(v), COL.dim, 10.5, 'right', 'middle');
+        }
+        ctx.strokeStyle = COL.axis; ctx.lineWidth = 1; ctx.strokeRect(L, y0, pw, rowH);
+        for (const s of ser){
+            ctx.strokeStyle = s.col; ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            samples.forEach((smp, i) => { const x = X(smp.tt), y = Y(s.f(smp)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+            ctx.stroke();
+        }
+        for (const s of ser){ ctx.fillStyle = s.col; ctx.beginPath(); ctx.arc(xc, Y(s.f(cur)), 4.5, 0, TAU); ctx.fill(); }
+        // legend (centered): P(|+>m) and P(|->m) with their current values; the kets name the measurement basis
+        const legend = s => [ { s: 'P(|' + s.sg + '⟩', col: s.col }, { s: mb, sub: true, col: s.col }, { s: ') = ' + fmt(s.f(cur), 2), col: s.col } ];
+        const lw0 = drawEq(ctx, legend(ser[0]), -9999, -99, 999, 13, 'left'), lw1 = drawEq(ctx, legend(ser[1]), -9999, -99, 999, 13, 'left');
+        let lx = L + pw/2 - (lw0 + lw1 + 66)/2;
+        for (const [s, lw] of [[ser[0], lw0], [ser[1], lw1]]){
+            line(ctx, lx, T - 13, lx + 16, T - 13, s.col, 2.5);
+            drawEq(ctx, legend(s), lx + 22, T - 9, 999, 13, 'left');
+            lx += lw + 44;
+        }
+        // cursor and x axis
+        line(ctx, xc, T - 2, xc, h - B + 2, 'rgba(248,250,252,0.75)', 1.4, [4, 3]);
+        const yb = h - B;
+        for (let k = Math.ceil(t0/tick); k*tick <= t1; k++) txt(ctx, fmt(k*tick, Number.isInteger(tick) ? 0 : Number.isInteger(tick*10) ? 1 : 2), X(k*tick), yb + 13, COL.dim, 10.5, 'center', 'middle');
+        txt(ctx, U().tAxis, L + pw, yb + 25, COL.dim, 11, 'right', 'middle');
+        txt(ctx, 't = ' + fmt(S.t, 2) + U().t, L, yb + 25, COL.text, 12, 'left', 'middle', 800);
+    }
+
+    // ---------- energy level diagram ----------
+    // level diagram: energy <-> vertical position (shared by drawing and dragging)
+    const LV_LO = -3.3, LV_HI = 5.3;
+    function levelGeom(h){
+        const T = 8, B = 8;
+        return { T, B, Y: E => T + (LV_HI - E)/(LV_HI - LV_LO)*(h - T - B),
+                 E: y => LV_HI - (y - T)/(h - T - B)*(LV_HI - LV_LO) };
+    }
+    function drawLevels(){
+        const { ctx, w, h } = fitCanvas($('levelCanvas'));
+        const { T, B, Y } = levelGeom(h);
+        const x0 = 46, x1 = w*0.62;
+        line(ctx, 30, T, 30, h - B, COL.axis, 1.2);
+        head(ctx, 30, h - B, 30, T - 2, COL.axis, 7);
+        txt(ctx, 'E', 18, T + 8, COL.dim, 12, 'center', 'middle', 800);
+        line(ctx, 26, Y(0), w - 6, Y(0), COL.grid, 1, [3, 4]);
+        txt(ctx, '0', 22, Y(0), COL.dim, 10, 'right', 'middle');
+        line(ctx, x0, Y(S.E1), x1, Y(S.E1), COL.c1, 3);
+        line(ctx, x0, Y(S.E2), x1, Y(S.E2), COL.c2, 3);
+        const sep = Math.abs(Y(S.E1) - Y(S.E2)) < 14;
+        txt(ctx, 'E₁ = ' + fmt(S.E1, 2) + U().E, x1 + 6, Y(S.E1) + (sep ? (S.E1 > S.E2 ? -7 : 7) : 0), COL.c1, 11.5, 'left', 'middle', 800);
+        txt(ctx, 'E₂ = ' + fmt(S.E2, 2) + U().E, x1 + 6, Y(S.E2) + (sep ? (S.E1 > S.E2 ? 7 : -7) : 0), COL.c2, 11.5, 'left', 'middle', 800);
+        // eigenstate ket just above each line, riding with it
+        const sub = S.basis.pick;
+        function ket(sign, x, y, col){
+            ctx.font = '800 13px "Exo 2", sans-serif';
+            const s = '|' + sign + '⟩', wd = ctx.measureText(s).width;
+            txt(ctx, s, x, y, col, 13, 'left', 'alphabetic', 800);
+            txt(ctx, sub, x + wd + 1, y + 4, col, 10, 'left', 'alphabetic', 800);
+        }
+        const kx1 = x0 + 4, kx2 = sep ? x0 + 48 : x0 + 4;
+        ket('+', kx1, Y(S.E1) - 5, COL.c1);
+        ket('−', kx2, Y(S.E2) - 5, COL.c2);
+        const xm = (x0 + x1)/2;
+        if (Math.abs(Y(S.E1) - Y(S.E2)) > 14){
+            const up = S.E2 > S.E1;
+            arrow(ctx, xm, Y(S.E1) + (up ? -3 : 3), xm, Y(S.E2) + (up ? 3 : -3), COL.rel, 1.8, 7);
+            arrow(ctx, xm, Y(S.E2) + (up ? 3 : -3), xm, Y(S.E1) + (up ? -3 : 3), COL.rel, 1.8, 7);
+            txt(ctx, 'ħω₂₁', xm + 6, (Y(S.E1) + Y(S.E2))/2, COL.rel, 11.5, 'left', 'middle', 800);
+        }
+    }
+
+    // ---------- panes ----------
+    const panes = [...document.querySelectorAll('.view-pane')].map((el, i) => ({
+        el, canvas: el.querySelector('canvas'), select: el.querySelector('select'), view: VIEWS[i].key
+    }));
+    panes.forEach(p => {
+        for (const v of VIEWS){ const o = document.createElement('option'); o.value = v.key; o.textContent = v.label; p.select.appendChild(o); }
+        p.select.value = p.view;
+        const zoomBtns = [...p.el.querySelectorAll('.zoom-btn')];
+        const showZoom = () => zoomBtns.forEach(b => { b.style.display = p.view === 'plots' ? '' : 'none'; });
+        zoomBtns.forEach(b => b.addEventListener('click', () => {
+            S.tZoom = clamp(S.tZoom*(b.dataset.zoom === '1' ? 1.5 : 1/1.5), 1/8, 16);
+        }));
+        showZoom();
+        p.select.addEventListener('change', () => { p.view = p.select.value; p.canvas.style.cursor = p.view === 'bloch' ? 'grab' : 'default'; showZoom(); });
+        p.canvas.style.cursor = p.view === 'bloch' ? 'grab' : 'default';
+        let drag = null;
+        p.canvas.addEventListener('pointerdown', e => {
+            if (p.view !== 'bloch') return;
+            drag = { x: e.clientX, y: e.clientY }; p.canvas.setPointerCapture(e.pointerId); p.canvas.style.cursor = 'grabbing';
+        });
+        p.canvas.addEventListener('pointermove', e => {
+            if (!drag) return;
+            S.yaw += (e.clientX - drag.x)*0.01;
+            S.pitch = clamp(S.pitch + (e.clientY - drag.y)*0.01, -1.45, 1.45);
+            drag = { x: e.clientX, y: e.clientY };
+        });
+        const end = () => { if (drag){ drag = null; p.canvas.style.cursor = 'grab'; } };
+        p.canvas.addEventListener('pointerup', end);
+        p.canvas.addEventListener('pointercancel', end);
+        p.canvas.addEventListener('dblclick', () => { if (p.view === 'bloch'){ S.yaw = YAW0; S.pitch = PITCH0; } if (p.view === 'plots') S.tZoom = 1; });
+    });
+    const DRAW = { phasor: p => drawPlane(p, false), relative: p => drawPlane(p, true), bloch: drawBloch, plots: drawPlots };
+
+    // ---------- DOM readouts ----------
+    const lastText = {};
+    function setText(id, s){ if (lastText[id] !== s){ lastText[id] = s; $(id).textContent = s; } }
+    function updateLive(){
+        const st = state(S.t), b = toLab(blochVec(st), eFrame()), T21 = period(w21());
+        setText('timeVal', 't = ' + fmt(S.t, 2) + U().t);
+        setText('timeNote', isFinite(T21) ? 't = ' + fmt(S.t/T21, 3) + ' T₂₁' : 'T₂₁ = ∞ (degenerate)');
+        setText('roC1p', fmt(st.m1, 3) + ' e^(i·' + fmtPi(wrap(st.p1)) + ')');
+        setText('roC2p', fmt(st.m2, 3) + ' e^(i·' + fmtPi(wrap(st.p2)) + ')');
+        setText('roProb', fmt(st.m1*st.m1, 3) + ', ' + fmt(st.m2*st.m2, 3));
+        setText('roDphi', st.m1 > 0.02 && st.m2 > 0.02 ? fmtPi(wrap(st.dphi)) : 'undefined');
+        setText('roSig', fmt(b.x, 2) + ', ' + fmt(b.y, 2) + ', ' + fmt(b.z, 2));
+        const Pm = measProbs(st);
+        setText('roPp', fmt(Pm[0], 3) + ', ' + fmt(Pm[1], 3));
+    }
+    function updateStatic(){
+        $('E1Val').textContent = fmt(S.E1, 2);
+        $('E2Val').textContent = fmt(S.E2, 2);
+        $('w1Val').textContent = fmt(w1(), 2);
+        $('w2Val').textContent = fmt(w2(), 2);
+        $('w21Val').textContent = fmt(w21(), 2);
+        $('T1Val').textContent = fmt(period(w1()), 2);
+        $('T2Val').textContent = fmt(period(w2()), 2);
+        $('T21Val').textContent = fmt(period(w21()), 2);
+        $('omegaUnits').textContent = S.units === 'eVfs' ? 'ω in rad/fs · T in fs' : 'ω in E₀/ħ · T in ħ/E₀';
+        document.querySelectorAll('.E-unit').forEach(el => { el.textContent = U().Eunit; });
+        $('speedUnit').textContent = U().speed;
+        $('hbarNote').textContent = U().hbarNote;
+        $('hamBtnLabel').innerHTML = '|+⟩<sub>' + S.basis.pick + '</sub>: ' + fmt(S.E1, 2) + U().E + '<br>|−⟩<sub>' + S.basis.pick + '</sub>: ' + fmt(S.E2, 2) + U().E;
+        updateMatrix();
+        $('addT1Btn').disabled = !isFinite(period(w1()));
+        $('addT2Btn').disabled = !isFinite(period(w2()));
+        $('addT21Btn').disabled = !isFinite(period(w21()));
+        $('degenBanner').hidden = Math.abs(w21()) > 1e-9;
+        $('initSummary').innerHTML = stateSummary('|ψ(0)⟩', S.init);
+        $('initBtnLabel').innerHTML = stateLabel(S.init);
+        const [c1, c2] = coeffs0(), sb = S.basis.pick;
+        const cstr = c => Math.abs(c[1]) < 5e-4 ? fmt(c[0], 3) : '(' + fmtC(c[0], c[1]) + ')';
+        const ex = E => 'e<sup>\u2212i(' + fmt(E, 2) + U().E + ')t/\u0127</sup>';
+        $('psiEq').innerHTML = '|\u03C8(t)\u27E9 = <span class="t1">' + cstr(c1) + ' ' + ex(S.E1) + ' |+\u27E9<sub>' + sb + '</sub></span>' +
+            ' + <span class="t2">' + cstr(c2) + ' ' + ex(S.E2) + ' |\u2212\u27E9<sub>' + sb + '</sub></span>';
+        $('E1Ket').innerHTML = '|+\u27E9<sub>' + sb + '</sub>';
+        $('E2Ket').innerHTML = '|\u2212\u27E9<sub>' + sb + '</sub>';
+        $('basisBtnLabel').innerHTML = '|\u00B1\u27E9<sub>' + sb + '</sub>';
+        document.querySelectorAll('.zbasis-note').forEach(el => { el.style.display = S.basis.pick === 'z' ? 'none' : ''; });
+        $('measBtnLabel').innerHTML = '|±⟩<sub>' + S.meas.pick + '</sub>';
+        $('roPpLbl').innerHTML = 'P(+<sub>' + S.meas.pick + '</sub>), P(−<sub>' + S.meas.pick + '</sub>)';
+        pickers.forEach(pk => pk.sync());
+    }
+    // push the model into every input (called after energy shifts and at start-up)
+    function syncInputs(){
+        $('E1Slider').value = S.E1;
+        $('E2Slider').value = S.E2;
+        updateStatic();
+    }
+
+    // ---------- state pickers (initial and final) ----------
+    const BASIS = {
+        pz: { m2: 0,            ph2: 0,      html: '|+⟩<sub>z</sub>' },
+        mz: { m2: 1,            ph2: 0,      html: '|−⟩<sub>z</sub>' },
+        px: { m2: Math.SQRT1_2, ph2: 0,      html: '|+⟩<sub>x</sub>' },
+        mx: { m2: Math.SQRT1_2, ph2: PI,     html: '|−⟩<sub>x</sub>' },
+        py: { m2: Math.SQRT1_2, ph2: PI/2,   html: '|+⟩<sub>y</sub>' },
+        my: { m2: Math.SQRT1_2, ph2: 1.5*PI, html: '|−⟩<sub>y</sub>' }
+    };
+    function stateName(tg){
+        if (BASIS[tg.pick]) return BASIS[tg.pick].html.replace('<sub>', '').replace('</sub>', '');
+        return '(θ = ' + fmtPi(2*Math.asin(clamp(tg.m2, 0, 1))) + ', φ = ' + fmtPi(tg.ph2) + ')';
+    }
+    function stateLabel(tg){
+        if (BASIS[tg.pick]) return BASIS[tg.pick].html;
+        return '\u03B8 ' + fmtPi(2*Math.asin(clamp(tg.m2, 0, 1))) + ', \u03C6 ' + fmtPi(tg.ph2);
+    }
+    function stateSummary(ket, tg){
+        const a2 = clamp(tg.m2, 0, 1), a1 = Math.sqrt(Math.max(0, 1 - a2*a2));
+        const name = BASIS[tg.pick] ? ' = ' + BASIS[tg.pick].html : '';
+        return ket + name + ' = (' + fmt(a1, 3) + ')|+⟩<sub>z</sub><br>+ (' + fmtC(a2*Math.cos(tg.ph2), a2*Math.sin(tg.ph2)) + ')|−⟩<sub>z</sub>';
+    }
+    function sliderRow(id, label, min, max, step){
+        return '<div class="slider-control" style="margin-top:4px;"><label>' + label + '</label><div class="slider-row">' +
+            '<button class="step-btn" data-slider="' + id + '" data-dir="-1" aria-label="Decrease">&#9664;</button>' +
+            '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + step + '">' +
+            '<button class="step-btn" data-slider="' + id + '" data-dir="1" aria-label="Increase">&#9654;</button>' +
+            '<div class="digital-display" id="' + id + 'Val"></div></div></div>';
+    }
+    // tg is S.init; onChange runs after every edit
+    function buildPicker(rootId, pre, tg, onChange){
+        const root = $(rootId);
+        root.innerHTML =
+            '<div class="basis-grid">' +
+            ['pz', 'mz', 'px', 'mx', 'py', 'my'].map(k => '<button class="btn-secondary" data-pick="' + k + '">' + BASIS[k].html + '</button>').join('') +
+            '<button class="btn-secondary mode-btn" data-pick="angles">(θ, φ)</button>' +
+            '<button class="btn-secondary mode-btn" data-pick="c2">|c₂|, φ₂</button></div>' +
+            '<div class="pick-sliders coef-block" data-for="angles" style="display:none;">' +
+                sliderRow(pre + 'Theta', 'θ from the z axis (units of π)', 0, 1, 0.01) +
+                sliderRow(pre + 'Phi', 'φ from the x axis (units of π)', 0, 2, 0.01) + '</div>' +
+            '<div class="pick-sliders coef-block c2" data-for="c2" style="display:none;">' +
+                sliderRow(pre + 'Mag2', '|c₂|, coefficient of |−⟩<sub>z</sub>', 0, 1, 0.01) +
+                sliderRow(pre + 'Ph2', 'Phase φ₂ (units of π)', 0, 2, 0.01) +
+                '<div class="auto-note">c₁, coefficient of |+⟩<sub>z</sub> = √(1 − |c₂|²) = <span id="' + pre + 'Mag1Val"></span> (real)</div>' +
+                '<div class="auto-note zbasis-note" style="display:none;">These are z-basis coefficients. The energy eigenstates are not |±⟩<sub>z</sub> now, so the coefficients in the equation above the views are different.</div></div>';
+        const btns = [...root.querySelectorAll('[data-pick]')];
+        const panels = [...root.querySelectorAll('.pick-sliders')];
+        function sync(){
+            btns.forEach(b => b.classList.toggle('active-on', b.dataset.pick === tg.pick));
+            panels.forEach(pn => { pn.style.display = pn.dataset.for === tg.pick ? '' : 'none'; });
+            const th = 2*Math.asin(clamp(tg.m2, 0, 1));
+            $(pre + 'Theta').value = th/PI;      $(pre + 'ThetaVal').textContent = fmtPi(th);
+            $(pre + 'Phi').value = tg.ph2/PI;    $(pre + 'PhiVal').textContent = fmtPi(tg.ph2);
+            $(pre + 'Mag2').value = tg.m2;       $(pre + 'Mag2Val').textContent = fmt(tg.m2, 3);
+            $(pre + 'Ph2').value = tg.ph2/PI;    $(pre + 'Ph2Val').textContent = fmtPi(tg.ph2);
+            $(pre + 'Mag1Val').textContent = fmt(Math.sqrt(Math.max(0, 1 - tg.m2*tg.m2)), 3);
+        }
+        btns.forEach(b => b.addEventListener('click', () => {
+            const k = b.dataset.pick;
+            if (BASIS[k]){ tg.m2 = BASIS[k].m2; tg.ph2 = BASIS[k].ph2; }
+            tg.pick = k;          // (θ, φ) and (|c₂|, φ₂) open their sliders on the current state
+            onChange();
+        }));
+        $(pre + 'Theta').addEventListener('input', e => { tg.m2 = Math.sin(parseFloat(e.target.value)*PI/2); onChange(); });
+        $(pre + 'Phi').addEventListener('input', e => { tg.ph2 = parseFloat(e.target.value)*PI; onChange(); });
+        $(pre + 'Mag2').addEventListener('input', e => { tg.m2 = parseFloat(e.target.value); onChange(); });
+        $(pre + 'Ph2').addEventListener('input', e => { tg.ph2 = parseFloat(e.target.value)*PI; onChange(); });
+        return { sync };
+    }
+    // ---------- axis pickers: a pair |+>a, |->a (energy eigenbasis and measurement basis) ----------
+    function buildAxisPicker(rootId, pre, tg, onChange){
+        const root = $(rootId);
+        root.innerHTML = '<div class="basis-grid-4">' +
+            ['z', 'x', 'y'].map(k => '<button class="btn-secondary" data-axis="' + k + '">|±⟩<sub>' + k + '</sub></button>').join('') +
+            '<button class="btn-secondary" data-axis="n">|±⟩<sub>n</sub> (θ, φ)</button></div>' +
+            '<div class="pick-sliders coef-block" style="display:none;">' +
+                sliderRow(pre + 'Theta', 'θ of n̂ from the z axis (units of π)', 0, 1, 0.01) +
+                sliderRow(pre + 'Phi', 'φ of n̂ from the x axis (units of π)', 0, 2, 0.01) + '</div>' +
+            '<div class="state-summary"></div>';
+        const btns = [...root.querySelectorAll('[data-axis]')], panel = root.querySelector('.pick-sliders'), summary = root.querySelector('.state-summary');
+        function sync(){
+            btns.forEach(b => b.classList.toggle('active-on', b.dataset.axis === tg.pick));
+            panel.style.display = tg.pick === 'n' ? '' : 'none';
+            $(pre + 'Theta').value = tg.th/PI; $(pre + 'ThetaVal').textContent = fmtPi(tg.th);
+            $(pre + 'Phi').value = tg.ph/PI;   $(pre + 'PhiVal').textContent = fmtPi(tg.ph);
+            const [e1, e2] = axisVecs(tg), sb = tg.pick;
+            const row = (sg, e) => '|' + sg + '⟩<sub>' + sb + '</sub> = (' + fmtC(e[0][0], e[0][1]) + ')|+⟩<sub>z</sub> + (' + fmtC(e[1][0], e[1][1]) + ')|−⟩<sub>z</sub>';
+            summary.innerHTML = row('+', e1) + '<br>' + row('−', e2);
+        }
+        btns.forEach(b => b.addEventListener('click', () => { tg.pick = b.dataset.axis; onChange(); }));
+        $(pre + 'Theta').addEventListener('input', e => { tg.th = parseFloat(e.target.value)*PI; onChange(); });
+        $(pre + 'Phi').addEventListener('input', e => { tg.ph = parseFloat(e.target.value)*PI; onChange(); });
+        return { sync };
+    }
+
+    // ---------- Hamiltonian matrix in a chosen basis: H_ij = sum_k E_k <b_i|E_k><E_k|b_j> ----------
+    function hamMatrix(mb){
+        const b = axisVecs(mb === 'n' ? { pick: 'n', th: S.basis.th, ph: S.basis.ph } : { pick: mb }), e = eVecs(), E = [S.E1, S.E2];
+        const M = [[0, 0], [0, 0]].map(r => r.map(() => [0, 0]));
+        for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) for (let k = 0; k < 2; k++){
+            const a = inner(b[i], e[k]), c = inner(b[j], e[k]);          // a * conj(c)
+            M[i][j][0] += E[k]*(a[0]*c[0] + a[1]*c[1]);
+            M[i][j][1] += E[k]*(a[1]*c[0] - a[0]*c[1]);
+        }
+        return M;
+    }
+    function fmtEntry(z){
+        if (Math.abs(z[1]) < 5e-4) return fmt(z[0], 3);
+        if (Math.abs(z[0]) < 5e-4) return fmt(z[1], 3) + 'i';
+        return fmtC(z[0], z[1]);
+    }
+    function updateMatrix(){
+        if (S.matBasis === 'n' && S.basis.pick !== 'n') S.matBasis = 'z';
+        const keys = ['z', 'x', 'y'].concat(S.basis.pick === 'n' ? ['n'] : []);
+        $('matBasisGrid').innerHTML = keys.map(k => '<button class="btn-secondary' + (k === S.matBasis ? ' active-on' : '') + '" data-mb="' + k + '">|±⟩<sub>' + k + '</sub></button>').join('');
+        const M = hamMatrix(S.matBasis);
+        $('matrixBox').innerHTML = '<span class="mat-lbl">H =</span><div class="mat-br"><table>' +
+            M.map(r => '<tr>' + r.map(z => '<td>' + fmtEntry(z) + '</td>').join('') + '</tr>').join('') +
+            '</table></div><span class="mat-sub">' + S.matBasis + '</span>';
+        const k = S.matBasis;
+        $('matrixNote').innerHTML = 'Rows and columns: |+⟩<sub>' + k + '</sub>, |−⟩<sub>' + k + '</sub>' + (S.units === 'eVfs' ? ' · entries in eV' : ' · entries in units of E₀');
+    }
+    $('matBasisGrid').addEventListener('click', e => {
+        const b = e.target.closest('[data-mb]'); if (!b) return;
+        S.matBasis = b.dataset.mb; updateMatrix();
+    });
+
+    const pickers = [
+        // changing the initial state restarts the clock at t = 0
+        buildPicker('initPicker', 'init', S.init, () => { S.t = 0; updateStatic(); }),
+        // changing the energy eigenstates changes the dynamics, so the clock restarts at t = 0
+        buildAxisPicker('basisPicker', 'basis', S.basis, () => { S.t = 0; updateStatic(); }),
+        // changing the measurement basis only changes what is measured, so time keeps running
+        buildAxisPicker('measPicker', 'meas', S.meas, () => updateStatic())
+    ];
+
+    // ---------- controls ----------
+    // changing an energy restarts the clock at t = 0, so the state shown is c(0) and the phases do not jump
+    $('E1Slider').addEventListener('input', e => { S.E1 = parseFloat(e.target.value); S.t = 0; updateStatic(); });
+    $('E2Slider').addEventListener('input', e => { S.E2 = parseFloat(e.target.value); S.t = 0; updateStatic(); });
+    document.querySelectorAll('.step-btn[data-slider]').forEach(btn => btn.addEventListener('click', () => {
+        const s = $(btn.dataset.slider), step = parseFloat(s.step), dir = parseInt(btn.dataset.dir, 10);
+        s.value = clamp(parseFloat(s.value) + dir*step, parseFloat(s.min), parseFloat(s.max)).toFixed(4);
+        s.dispatchEvent(new Event('input'));
+    }));
+    function modeSelector(id, attr, onPick){
+        const box = $(id);
+        box.querySelectorAll('.mode-opt').forEach(b => b.addEventListener('click', () => {
+            box.querySelectorAll('.mode-opt').forEach(o => o.classList.toggle('selected', o === b));
+            onPick(b.dataset[attr]);
+        }));
+    }
+    modeSelector('layoutSel', 'layout', n => { S.layout = +n; $('viewGrid').className = 'layout-' + n; });
+    // drag the energy lines up and down; the sliders follow
+    (function(){
+        const cv = $('levelCanvas');
+        let which = null;
+        const local = e => { const r = cv.getBoundingClientRect(); return { y: e.clientY - r.top, h: r.height }; };
+        function nearest(e){
+            const { y, h } = local(e), g = levelGeom(h);
+            const d1 = Math.abs(y - g.Y(S.E1)), d2 = Math.abs(y - g.Y(S.E2));
+            if (Math.min(d1, d2) > 10) return null;
+            if (Math.abs(d1 - d2) < 0.5) return y < g.Y(S.E1) ? (S.E2 >= S.E1 ? 2 : 1) : (S.E2 >= S.E1 ? 1 : 2);   // overlapping: pick by side
+            return d1 < d2 ? 1 : 2;
+        }
+        function setFrom(e){
+            const { y, h } = local(e), sl = $(which === 1 ? 'E1Slider' : 'E2Slider');
+            const E = clamp(Math.round(levelGeom(h).E(y)/0.05)*0.05, parseFloat(sl.min), parseFloat(sl.max));
+            sl.value = E.toFixed(2); sl.dispatchEvent(new Event('input'));
+        }
+        cv.addEventListener('pointerdown', e => { which = nearest(e); if (!which) return; cv.setPointerCapture(e.pointerId); setFrom(e); });
+        cv.addEventListener('pointermove', e => {
+            if (which) setFrom(e);
+            else cv.style.cursor = nearest(e) ? 'ns-resize' : 'default';
+        });
+        const end = () => { which = null; };
+        cv.addEventListener('pointerup', end);
+        cv.addEventListener('pointercancel', end);
+    })();
+
+    // switching units keeps the energy numbers and restarts the clock
+    modeSelector('unitsSel', 'units', u => { S.units = u; S.t = 0; updateStatic(); });
+
+    // Hamiltonian panel expands in place
+    $('hamToggleBtn').addEventListener('click', () => {
+        const open = $('hamBody').style.display === 'none';
+        $('hamBody').style.display = open ? '' : 'none';
+        $('hamChevron').innerHTML = open ? '&#9662;' : '&#9656;';
+        $('hamToggleBtn').setAttribute('aria-expanded', String(open));
+    });
+
+    // full screen
+    const fsEl = document.documentElement;
+    const fsActive = () => document.fullscreenElement || document.webkitFullscreenElement;
+    if (!(fsEl.requestFullscreen || fsEl.webkitRequestFullscreen)) $('fsBtn').style.display = 'none';
+    $('fsBtn').addEventListener('click', () => {
+        if (fsActive()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        else (fsEl.requestFullscreen || fsEl.webkitRequestFullscreen).call(fsEl);
+    });
+    const fsLabel = () => { $('fsBtn').innerHTML = fsActive() ? '&#x26F6; EXIT FULL SCREEN' : '&#x26F6; SET TO FULL SCREEN'; };
+    document.addEventListener('fullscreenchange', fsLabel);
+    document.addEventListener('webkitfullscreenchange', fsLabel);
+    function toggle(id, key){
+        $(id).addEventListener('click', () => { S[key] = !S[key]; $(id).classList.toggle('active-on', S[key]); });
+    }
+    toggle('trailsBtn', 'trails'); toggle('arcsBtn', 'arcs'); toggle('omegaBtn', 'omegaLbl'); toggle('projBtn', 'proj');
+
+    function setPlaying(on){
+        S.playing = on;
+        $('playBtn').classList.toggle('playing', on);
+        $('playBtn').innerHTML = on ? '&#10074;&#10074; PAUSE' : '&#9654; PLAY';
+    }
+    $('playBtn').addEventListener('click', () => setPlaying(!S.playing));
+    $('resetTimeBtn').addEventListener('click', () => { setPlaying(false); S.t = 0; });
+    $('stepFwdBtn').addEventListener('click', () => { setPlaying(false); S.t += stepSize(); });
+    $('stepBackBtn').addEventListener('click', () => { setPlaying(false); S.t = Math.max(0, S.t - stepSize()); });
+    $('addT1Btn').addEventListener('click', () => { setPlaying(false); S.t += period(w1()); });
+    $('addT2Btn').addEventListener('click', () => { setPlaying(false); S.t += period(w2()); });
+    $('addT21Btn').addEventListener('click', () => { setPlaying(false); S.t += period(w21()); });
+    $('speedSlider').addEventListener('input', e => { S.speed = parseFloat(e.target.value); $('speedVal').textContent = S.speed.toFixed(1) + '×'; });
+    function shiftE(d){
+        if (S.E1 + d < -3 || S.E2 + d < -3 || S.E1 + d > 5 || S.E2 + d > 5) return;
+        S.E1 = Math.round((S.E1 + d)*100)/100; S.E2 = Math.round((S.E2 + d)*100)/100; S.t = 0; syncInputs();
+    }
+    $('shiftUpBtn').addEventListener('click', () => shiftE(1));
+    $('shiftDownBtn').addEventListener('click', () => shiftE(-1));
+    // info modal
+    const infoModal = $('infoModal');
+    const openInfo = () => infoModal.classList.add('show');
+    const closeInfo = () => infoModal.classList.remove('show');
+    $('infoBtnHeader').addEventListener('click', openInfo);
+    $('infoModalCloseBtn').addEventListener('click', closeInfo);
+    $('infoModalX').addEventListener('click', closeInfo);
+    // state pop-ups: open from the compact buttons; DONE, Enter, Escape or a click outside closes them
+    const stateModals = [$('initModal'), $('measModal'), $('basisModal'), $('matrixModal')];
+    $('matrixOpenBtn').addEventListener('click', () => { closeStates(); $('matrixModal').classList.add('show'); });
+    $('matrixDoneBtn').addEventListener('click', () => closeStates());
+    $('basisOpenBtn').addEventListener('click', () => { closeStates(); $('basisModal').classList.add('show'); });
+    $('basisDoneBtn').addEventListener('click', () => closeStates());
+    const closeStates = () => stateModals.forEach(m => m.classList.remove('show'));
+    $('initOpenBtn').addEventListener('click', () => { closeStates(); $('initModal').classList.add('show'); });
+    $('psiEq').addEventListener('click', () => { closeStates(); $('initModal').classList.add('show'); });
+    $('psiEq').addEventListener('keydown', e => { if (e.key === 'Enter' && !$('initModal').classList.contains('show')){ e.stopPropagation(); $('initModal').classList.add('show'); } });
+    $('measOpenBtn').addEventListener('click', () => { closeStates(); $('measModal').classList.add('show'); });
+    $('initDoneBtn').addEventListener('click', closeStates);
+    $('measDoneBtn').addEventListener('click', closeStates);
+    window.addEventListener('click', e => { if (e.target === infoModal) closeInfo(); if (stateModals.includes(e.target)) closeStates(); });
+    window.addEventListener('keydown', e => {
+        if (e.key === 'Escape'){ closeInfo(); closeStates(); }
+        if (e.key === 'Enter' && stateModals.some(m => m.classList.contains('show'))){ e.preventDefault(); closeStates(); }
+        if (e.key === ' ' && (e.target === document.body || e.target === document.documentElement) && !mbActive){
+            e.preventDefault(); setPlaying(!S.playing);
+        }
+    });
+
+    // ---------- animation loop ----------
+    let lastNow = performance.now();
+    function frame(now){
+        const dt = Math.min(0.1, (now - lastNow)/1000); lastNow = now;
+        if (S.playing) S.t += dt*S.speed;
+        panes.forEach((p, i) => {
+            if (i >= S.layout) return;
+            let c = fitCanvas(p.canvas);
+            // small panes: draw at a 340-px logical width and scale the whole picture down, text included
+            if (c.w < MIN_VIEW_W){ const s = c.w/MIN_VIEW_W; c.ctx.scale(s, s); c = { ctx: c.ctx, w: MIN_VIEW_W, h: c.h/s }; }
+            DRAW[p.view](c);
+        });
+        if ($('hamBody').style.display !== 'none') drawLevels();
+        updateLive();
+        requestAnimationFrame(frame);
+    }
+    // expose the model for inspection/testing from the console
+    window.twoState = { S, state, blochVec, period, measProbs, measAxis, psiZ, labBloch, eFrame, toLab, coeffs0 };
+
+    // ---------- EDIT 6: LASER ----------
+    let laserActive=false;
+    const laserDot=document.getElementById('laserPointer');
+    function setLaser(on){
+        laserActive=on;
+        laserDot.classList.toggle('active',on);
+        document.getElementById('laserOnBtn').classList.toggle('active',on);
+        document.getElementById('laserOffBtn').classList.toggle('active',!on);
+    }
+    document.getElementById('laserOnBtn').addEventListener('click',()=>setLaser(true));
+    document.getElementById('laserOffBtn').addEventListener('click',()=>setLaser(false));
+    document.addEventListener('mousemove',e=>{
+        if (laserActive){ laserDot.style.left=e.clientX+'px'; laserDot.style.top=e.clientY+'px'; }
+    });
+    document.addEventListener('touchmove',e=>{
+        if (laserActive&&e.touches.length>0){ laserDot.style.left=e.touches[0].clientX+'px'; laserDot.style.top=e.touches[0].clientY+'px'; }
+    },{passive:true});
+
+    // ---------- EDIT 6: MARKERBOARD ----------
+    let mbActive=false, wbMode=false, mbCanvas, mbCtx, isDrawing=false;
+    let markerColor='#EE0000', markerSize=5, eraserMode=false;
+    function initMarkerboard(){
+        mbCanvas=document.getElementById('markerboardCanvas');
+        mbCtx=mbCanvas.getContext('2d');
+        mbCanvas.width=window.innerWidth; mbCanvas.height=window.innerHeight;
+        mbCanvas.addEventListener('mousedown',startDraw);
+        mbCanvas.addEventListener('mousemove',continueDraw);
+        mbCanvas.addEventListener('mouseup',stopDraw);
+        mbCanvas.addEventListener('mouseleave',stopDraw);
+        mbCanvas.addEventListener('touchstart',handleTouch,{passive:false});
+        mbCanvas.addEventListener('touchmove',handleTouch,{passive:false});
+        mbCanvas.addEventListener('touchend',stopDraw);
+    }
+    function resizeMb(){
+        if (!mbCanvas) return;
+        let img=null;
+        try { img=mbCtx.getImageData(0,0,mbCanvas.width,mbCanvas.height); } catch(e){}
+        mbCanvas.width=window.innerWidth; mbCanvas.height=window.innerHeight;
+        if (img){ try { mbCtx.putImageData(img,0,0); } catch(e){} }
+    }
+    function setMarkerboard(on){
+        if (on) setLaser(false);
+        mbActive=on;
+        document.getElementById('markerboardOverlay').classList.toggle('active',on);
+        document.getElementById('mbToolbar').classList.toggle('active',on);
+        if (!on){
+            wbMode=false;
+            const ov=document.getElementById('markerboardOverlay');
+            ov.classList.remove('whiteboard-mode'); ov.style.removeProperty('--wb-opacity');
+            document.getElementById('whiteboardBtn').classList.remove('active');
+            document.getElementById('opacityControl').classList.remove('wb-active');
+        }
+        document.getElementById('markerOnBtn').classList.toggle('active',on);
+        document.getElementById('markerOffBtn').classList.toggle('active',!on);
+    }
+    document.getElementById('markerOnBtn').addEventListener('click',()=>setMarkerboard(true));
+    document.getElementById('markerOffBtn').addEventListener('click',()=>setMarkerboard(false));
+    document.getElementById('mbExitBtn').addEventListener('click',()=>setMarkerboard(false));
+    document.getElementById('whiteboardBtn').addEventListener('click',()=>{
+        wbMode=!wbMode;
+        const ov=document.getElementById('markerboardOverlay'), op=document.getElementById('opacityControl');
+        ov.classList.toggle('whiteboard-mode',wbMode);
+        document.getElementById('whiteboardBtn').classList.toggle('active',wbMode);
+        op.classList.toggle('wb-active',wbMode);
+        if (wbMode){
+            const pct=parseInt(document.getElementById('wbOpacityInput').value);
+            ov.style.setProperty('--wb-opacity',(pct/100).toFixed(2));
+        } else ov.style.removeProperty('--wb-opacity');
+    });
+    document.getElementById('wbOpacityInput').addEventListener('input',e=>{
+        document.getElementById('wbOpacityValue').textContent=e.target.value;
+        if (wbMode) document.getElementById('markerboardOverlay').style.setProperty('--wb-opacity',(parseInt(e.target.value)/100).toFixed(2));
+    });
+    document.getElementById('markerSizeInput').addEventListener('input',e=>{
+        markerSize=parseInt(e.target.value);
+        document.getElementById('sizeValue').textContent=e.target.value;
+    });
+    document.querySelectorAll('.color-btn').forEach(el=>el.addEventListener('click',()=>{
+        markerColor=el.dataset.color; eraserMode=false;
+        document.querySelectorAll('.color-btn').forEach(b=>b.classList.remove('selected'));
+        el.classList.add('selected');
+    }));
+    document.getElementById('eraseBtn').addEventListener('click',function(){
+        eraserMode=!eraserMode;
+        this.classList.toggle('active',eraserMode);
+    });
+    document.getElementById('clearBtn').addEventListener('click',()=>{
+        if (mbCtx) mbCtx.clearRect(0,0,mbCanvas.width,mbCanvas.height);
+    });
+    function startDraw(e){
+        isDrawing=true;
+        const r=mbCanvas.getBoundingClientRect();
+        mbCtx.beginPath(); mbCtx.moveTo(e.clientX-r.left,e.clientY-r.top);
+    }
+    function continueDraw(e){
+        if (!isDrawing) return;
+        const r=mbCanvas.getBoundingClientRect();
+        mbCtx.lineWidth=markerSize; mbCtx.lineCap='round'; mbCtx.lineJoin='round';
+        mbCtx.globalCompositeOperation=eraserMode?'destination-out':'source-over';
+        mbCtx.strokeStyle=eraserMode?'rgba(0,0,0,1)':markerColor;
+        mbCtx.lineTo(e.clientX-r.left,e.clientY-r.top); mbCtx.stroke();
+    }
+    function stopDraw(){ isDrawing=false; }
+    function handleTouch(e){
+        if (mbActive) e.preventDefault();
+        if (!e.touches||e.touches.length===0) return;
+        const t=e.touches[0], r=mbCanvas.getBoundingClientRect();
+        if (e.type==='touchstart'){ isDrawing=true; mbCtx.beginPath(); mbCtx.moveTo(t.clientX-r.left,t.clientY-r.top); }
+        else if (e.type==='touchmove'&&isDrawing){
+            mbCtx.lineWidth=markerSize; mbCtx.lineCap='round'; mbCtx.lineJoin='round';
+            mbCtx.globalCompositeOperation=eraserMode?'destination-out':'source-over';
+            mbCtx.strokeStyle=eraserMode?'rgba(0,0,0,1)':markerColor;
+            mbCtx.lineTo(t.clientX-r.left,t.clientY-r.top); mbCtx.stroke();
+        }
+    }
+    window.addEventListener('resize',resizeMb);
+
+
+    // ---------- init ----------
+    initMarkerboard();
+    syncInputs();
+    requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
