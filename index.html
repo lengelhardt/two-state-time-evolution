@@ -551,7 +551,7 @@
         border-width:1px; border-bottom-width:2px; box-shadow:0 1px 3px rgba(0,0,0,0.15); color:var(--ink-soft); }
     .basis-btn sub { font-size:0.75em; }
     .state-open-btn .sob-sub { font-size:10.5px; letter-spacing:0; text-transform:none; color:var(--ink-soft); font-weight:700; }
-    .state-open-btn .ham-sum { font-size:12px; line-height:1.35; }
+    .state-open-btn .ham-sum { font-size:11px; line-height:1.35; }
     .ham-btn { font-size:12px; padding:7px 5px; line-height:1.25; }
     .ham-btn { display:flex; align-items:center; justify-content:center; gap:5px; }
     .mat-lbl2 { display:inline-block; line-height:1.05; text-align:left; }
@@ -565,6 +565,18 @@
     .mat-br table { border-collapse:collapse; }
     .mat-br td { padding:6px 12px; text-align:center; font-family:'Audiowide','Orbitron',monospace; font-size:15px; font-weight:400; white-space:nowrap; }
     .mat-sub { align-self:flex-end; font-size:18px; margin-left:-4px; }
+    #fsBtn { width:100%; padding:9px; font-size:15px; letter-spacing:0.05em; }
+    /* draw the eye to full screen for about 8 s after the page opens */
+    @keyframes fsPulse {
+        0%, 100% { box-shadow:0 4px 12px rgba(60,80,200,0.45); transform:scale(1); }
+        50%      { box-shadow:0 0 0 6px rgba(90,112,232,0.35), 0 0 22px 6px rgba(90,112,232,0.6); transform:scale(1.03); }
+    }
+    #fsBtn.fs-pulse { animation:fsPulse 1.6s ease-in-out 5; }
+    @media (prefers-reduced-motion: reduce) { #fsBtn.fs-pulse { animation:none; } }
+    .inline-sel { display:flex; align-items:center; gap:8px; }
+    .inline-sel .inline-lbl { flex:0 0 54px; font-family:'Exo 2',sans-serif; font-size:13px; font-weight:800; color:var(--ink); }
+    .inline-sel .mode-selector { flex:1; height:34px; }
+    .inline-sel .mode-opt { font-size:12px; }
     .basis-grid-4 { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
     .basis-grid-4 button { font-size:16px; padding:6px 4px; text-transform:none; }
     .basis-grid-4 button sub { font-size:0.7em; }
@@ -660,7 +672,12 @@
     <!-- LEFT PANEL: states, Hamiltonian, presentation tools -->
     <div class="left-panel">
         <div class="control-group">
-            <button class="btn-secondary" id="fsBtn" style="width:100%; margin-bottom:6px; padding:7px;">&#x26F6; SET TO FULL SCREEN</button>
+            <button class="btn-primary fs-pulse" id="fsBtn">&#x26F6; SET TO FULL SCREEN</button>
+            <div class="inline-sel" style="margin:6px 0;"><span class="inline-lbl">System</span>
+                <div class="mode-selector" id="systemSel" title="Which two-state system the labels describe">
+                    <button class="mode-opt selected" data-system="spin">SPIN &frac12;</button>
+                    <button class="mode-opt" data-system="qubit">QUBIT</button>
+                </div></div>
             <button class="btn-secondary state-open-btn" id="initOpenBtn" aria-haspopup="dialog" title="Set the initial state">
                 <span class="sob-title">&#9883;&#65039; INITIAL STATE<br>|&psi;(0)&#10217;</span><span class="sob-val" id="initBtnLabel">&mdash;</span><span class="sob-edit">&#9998;</span>
             </button>
@@ -709,8 +726,8 @@
             </div>
             <div class="auto-note" id="omegaUnits" style="text-align:center;">&mdash;</div>
             <div class="button-row" style="margin-top:8px;">
-                <button class="btn-secondary" id="shiftDownBtn" title="Lower both energies by 1: the relative phase is unchanged">BOTH E &minus; 1</button>
-                <button class="btn-secondary" id="shiftUpBtn" title="Raise both energies by 1: the relative phase is unchanged">BOTH E + 1</button>
+                <button class="btn-secondary" id="shiftDownBtn" title="Lower both energies: the relative phase is unchanged">BOTH E &minus; <span class="shiftAmt">1</span></button>
+                <button class="btn-secondary" id="shiftUpBtn" title="Raise both energies: the relative phase is unchanged">BOTH E + <span class="shiftAmt">1</span></button>
             </div>
             </div>
         </div>
@@ -796,11 +813,11 @@
                 <button class="btn-secondary active-on" id="omegaBtn">&omega; ARROWS</button>
                 <button class="btn-secondary" id="projBtn">PROJECTIONS</button>
             </div>
-            <div class="slider-control" style="margin-top:8px;"><label>Units</label></div>
-            <div class="mode-selector" id="unitsSel" title="Units for energy and time">
-                <button class="mode-opt selected" data-units="eVfs">eV &amp; fs</button>
-                <button class="mode-opt" data-units="nat">&hbar; = 1</button>
-            </div>
+            <div class="inline-sel" style="margin-top:8px;"><span class="inline-lbl">Units</span>
+                <div class="mode-selector" id="unitsSel" title="Units for energy and time">
+                    <button class="mode-opt selected" data-units="phys">PHYSICAL UNITS</button>
+                    <button class="mode-opt" data-units="nat">&hbar; = 1</button>
+                </div></div>
         </div>
 
         <div class="control-group">
@@ -842,7 +859,7 @@
     <div class="info-modal-content">
         <div class="info-modal-body">        
             <h2>&#9883;&#65039; INITIAL STATE |&psi;(0)&#10217;</h2>
-            <div class="auto-note" style="margin:-4px 0 6px;">Written in the z basis, with the |+&#10217;<sub>z</sub> coefficient real and &ge; 0</div>
+            <div class="auto-note" style="margin:-4px 0 6px;" id="initConvNote">&mdash;</div>
             <div id="initPicker"></div>
             <div class="state-summary" id="initSummary">&mdash;</div>
                 </div>
@@ -865,7 +882,7 @@
     <div class="info-modal-content">
         <div class="info-modal-body">
             <h2>&#9889; ENERGY EIGENSTATES</h2>
-            <div class="auto-note" style="margin:-4px 0 8px;">|E&#8321;&#10217; = |+&#10217;<sub>n</sub> has energy E&#8321;, |E&#8322;&#10217; = |&minus;&#10217;<sub>n</sub> has energy E&#8322;. For a spin, this is a magnetic field along n&#770;.</div>
+            <div class="auto-note" style="margin:-4px 0 8px;" id="basisNote">&mdash;</div>
             <div id="basisPicker"></div>
         </div>
         <div class="info-modal-footer"><button class="info-modal-close-btn" id="basisDoneBtn">DONE</button></div>
@@ -904,6 +921,19 @@
                 <li>Compare with the <strong>Relative phase</strong> view: in a frame that rotates with c&#8321;, only c&#8322; moves, and it moves at &omega;&#8322;&#8321; = (E&#8322; &minus; E&#8321;)/&hbar;.</li>
                 <li>Use <strong>1 / 2 / 4 VIEWS</strong> and each pane's menu to choose what is on screen.</li>
             </ol>
+
+            <h2>SPIN &frac12; OR QUBIT</h2>
+            <p>The math is identical for any two-state system. The <strong>SYSTEM</strong> toggle (top left, below SET TO FULL SCREEN) changes the labels. This INFO text uses the spin labels; in <strong>QUBIT</strong> mode the simulation shows the following instead:</p>
+            <table class="sym">
+                <tr><td><strong>Spin &frac12;</strong></td><td><strong>Qubit</strong></td></tr>
+                <tr><td>|+&#10217;<sub>z</sub>, |&minus;&#10217;<sub>z</sub></td><td>|0&#10217;, |1&#10217; (computational basis, |0&#10217; at the north pole)</td></tr>
+                <tr><td>|+&#10217;<sub>x</sub>, |&minus;&#10217;<sub>x</sub></td><td>|+&#10217;, |&minus;&#10217;</td></tr>
+                <tr><td>|+&#10217;<sub>y</sub>, |&minus;&#10217;<sub>y</sub></td><td>|+i&#10217;, |&minus;i&#10217;</td></tr>
+                <tr><td>|+&#10217;<sub>n</sub>, |&minus;&#10217;<sub>n</sub></td><td>|&theta;,&phi;&#10217; = cos(&theta;/2)|0&#10217; + e<sup>i&phi;</sup>sin(&theta;/2)|1&#10217;, and its orthogonal partner |&theta;,&phi;&#10217;<sup>&perp;</sup></td></tr>
+                <tr><td>c&#8321;, c&#8322;, E&#8321;, E&#8322;, &omega;&#8322;&#8321;, T&#8322;&#8321;</td><td>c&#8320;, c&#8321;, E&#8320;, E&#8321;, &omega;&#8321;&#8320;, T&#8321;&#8320;</td></tr>
+                <tr><td>eV and fs; E from &minus;3 to 5 eV</td><td>&mu;eV and ns; E from &minus;25 to 25 &mu;eV</td></tr>
+            </table>
+            <p>The qubit defaults are E&#8320; = &minus;10.35 &mu;eV and E&#8321; = +10.35 &mu;eV, i.e. H = &minus;(&hbar;&omega;<sub>q</sub>/2)&sigma;<sub>z</sub> with a 5 GHz splitting (20.7 &mu;eV, period 0.2 ns), typical of a superconducting qubit. Each system remembers its own energies when you switch.</p>
 
             <h2>THE PHYSICS</h2>
             <h3>1. Stationary states and their phases</h3>
@@ -946,7 +976,7 @@
             <p>With the convention above, cos(&theta;/2) = |c&#8321;|, sin(&theta;/2) = |c&#8322;|, and the azimuth is &phi; = &Delta;&phi;. The Bloch vector is (&#10216;&sigma;<sub>x</sub>&#10217;, &#10216;&sigma;<sub>y</sub>&#10217;, &#10216;&sigma;<sub>z</sub>&#10217;) = (2|c&#8321;||c&#8322;| cos &Delta;&phi;, 2|c&#8321;||c&#8322;| sin &Delta;&phi;, |c&#8321;|&sup2; &minus; |c&#8322;|&sup2;), with |+&#10217;<sub>z</sub> at the north pole. Time evolution is a <strong>precession about the energy axis</strong> (drawn in orange and blue, labeled E&#8321; and E&#8322;; the z axis by default) at &omega;&#8322;&#8321;: the latitude (the probabilities |c<sub>n</sub>|&sup2;) is fixed and only the longitude (the relative phase) changes. The green and yellow dots mark |+&#10217; and |&minus;&#10217; of the measurement basis. If the state vector makes an angle &gamma; with the green dot, then P(+) = cos&sup2;(&gamma;/2) and P(&minus;) = sin&sup2;(&gamma;/2).</p>
 
             <h3>Units</h3>
-            <p>The <strong>UNITS</strong> toggle (in DISPLAY OPTIONS) chooses between two systems. <strong>eV &amp; fs</strong> (the default) uses &hbar; = 0.6582 eV&middot;fs, so 1 eV corresponds to &omega; = 1.519 rad/fs and a period T = h/E = 4.136 fs. With E&#8321; = 1 eV and E&#8322; = 2.5 eV, T&#8321; = 4.14 fs, T&#8322; = 1.65 fs and T&#8322;&#8321; = 2.76 fs; a 1.5 eV gap is a near-infrared photon, the scale of atomic transitions. <strong>&hbar; = 1</strong> is dimensionless: energies in a unit E&#8320;, angular frequencies in E&#8320;/&hbar; and time in &hbar;/E&#8320;, so &omega; equals E numerically. Switching keeps the energy numbers and resets t to 0; the motion looks the same, only the time scale changes.</p>
+            <p>The <strong>UNITS</strong> toggle (in DISPLAY OPTIONS) chooses <strong>physical units</strong> (the default) or <strong>&hbar; = 1</strong>. Physical units depend on the system: <strong>eV and fs</strong> for a spin and <strong>&mu;eV and ns</strong> for a qubit. Conveniently, &hbar; = 0.6582 in both (0.6582 eV&middot;fs = 0.6582 &mu;eV&middot;ns), so a period is T = h/E = 4.136 fs &divide; E(eV), or 4.136 ns &divide; E(&mu;eV). With the spin defaults E&#8321; = 1 eV and E&#8322; = 2.5 eV: T&#8321; = 4.14 fs, T&#8322; = 1.65 fs and T&#8322;&#8321; = 2.76 fs (a 1.5 eV gap is a near-infrared photon, the scale of atomic transitions). &hbar; = 1 is dimensionless: energies in a unit &epsilon;, angular frequencies in &epsilon;/&hbar; and time in &hbar;/&epsilon;, so &omega; equals E numerically. Switching units keeps the energy numbers and resets t to 0.</p>
 
             <h2>CONTROLS</h2>
             <ul>
@@ -954,7 +984,7 @@
                 <li><strong>Measurement basis:</strong> |&plusmn;&#10217;<sub>z</sub>, |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub> or |&plusmn;&#10217;<sub>n</sub>(&theta;, &phi;). The Measurement probabilities view plots P(+) and P(&minus;); its &minus;/+ buttons zoom the time axis.</li>
                 <li><strong>Resetting the clock:</strong> changing the initial state, the energy eigenstates or an energy sets t back to 0. Changing the measurement basis does not, because it only changes what is being measured.</li>
                 <li><strong>Define Hamiltonian:</strong> the DEFINE HAMILTONIAN panel starts collapsed and shows a summary of the eigenstates and energies; click it to open it in place. <strong>EIGENSTATES</strong> opens a pop-up to choose |&plusmn;&#10217;<sub>z</sub> (default), |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub> or |&plusmn;&#10217;<sub>n</sub>(&theta;, &phi;). <strong>MATRIX REPRESENTATION</strong> shows H as a 2&times;2 matrix in the z, x or y basis (or n, when the eigenstates are |&plusmn;&#10217;<sub>n</sub>). The level diagram labels each line with its ket. Changing the eigenstates resets t to 0.</li>
-                <li><strong>Energies:</strong> E&#8321;, E&#8322; from &minus;3 to 5. The panel lists &omega;&#8321;, &omega;&#8322;, &omega;&#8322;&#8321; and the matching periods. BOTH E &plusmn; 1 shifts the zero of energy.</li>
+                <li><strong>Energies:</strong> E&#8321;, E&#8322; from &minus;3 to 5 eV for a spin (&minus;25 to 25 &mu;eV for a qubit). The panel lists &omega;&#8321;, &omega;&#8322;, &omega;&#8322;&#8321; and the matching periods. BOTH E &plusmn; 1 shifts the zero of energy.</li>
                 <li><strong>Time:</strong> PLAY/PAUSE (or SPACE), reset to t = 0, step forward or back, and jump ahead by exactly one period T&#8321;, T&#8322; or T&#8322;&#8321;. Every arrow that period belongs to returns to where it started.</li>
                 <li><strong>Display:</strong> TRAILS show where each arrow was a moment ago. PHASE ARCS mark each phase angle from the real axis. &omega; ARROWS show the sense and rate of rotation, with the arc length proportional to &omega;. PROJECTIONS drop the Re/Im components onto the axes, and on the Bloch sphere drop the vector onto the equator.</li>
                 <li><strong>Views:</strong> Rotating phasors, Relative phase, Bloch sphere, Measurement probabilities. Any pane can show any view.</li>
@@ -1016,7 +1046,8 @@
         t: 0, playing: false, speed: 0.5,
         tZoom: 1,                                         // time-plot zoom (shared by every plot)
         layout: 4, trails: true, arcs: true, omegaLbl: true, proj: false,
-        units: 'eVfs', matBasis: 'z',
+        system: 'spin', unitMode: 'phys', matBasis: 'z', speedV: 0.5,
+        Esaved: { spin: { E1: 1, E2: 2.5 }, qubit: { E1: -10.35, E2: 10.35 } },   // each system keeps its own energies
         yaw: YAW0, pitch: PITCH0
     };
 
@@ -1079,10 +1110,52 @@
     function mags(){ const [c1, c2] = coeffs0(); return [Math.hypot(...c1), Math.hypot(...c2)]; }
     // units: energies in eV and time in fs (hbar = 0.6582 eV fs), or dimensionless with hbar = 1
     const UNITS = {
-        eVfs: { hbar: 0.6582119569, E: ' eV', t: ' fs', tAxis: 't (fs)', w: 'rad/fs', Eunit: '(eV)', hbarNote: 'ħ = 0.658 eV·fs', speed: 'fs' },
-        nat:  { hbar: 1,            E: '',    t: '',    tAxis: 't (ħ/E₀)', w: 'E₀/ħ', Eunit: '(units of E₀)', hbarNote: 'ħ = 1', speed: 'time units' }
+        eVfs:  { hbar: 0.6582119569, E: ' eV',  t: ' fs', tn: 'fs',  tAxis: 't (fs)',  w: 'rad/fs', en: 'eV',  Eunit: '(eV)',  hbarNote: 'ħ = 0.658 eV·fs', speed: 'fs' },
+        ueVns: { hbar: 0.6582119569, E: ' μeV', t: ' ns', tn: 'ns',  tAxis: 't (ns)',  w: 'rad/ns', en: 'μeV', Eunit: '(μeV)', hbarNote: 'ħ = 0.658 μeV·ns', speed: 'ns' },
+        nat:   { hbar: 1,            E: '',     t: '',    tn: 'ħ/ε', tAxis: 't (ħ/ε)', w: 'ε/ħ',    en: 'units of ε', Eunit: '(units of ε)', hbarNote: 'ħ = 1', speed: 'time units' }
     };
-    const U = () => UNITS[S.units];
+    // per-system settings: physical units, energy slider range, BOTH E ± step, playback-speed scale
+    const SYS = {
+        spin:  { units: 'eVfs',  min: -3,  max: 5,  step: 0.05, shift: 1, speedScale: 1 },
+        qubit: { units: 'ueVns', min: -25, max: 25, step: 0.05, shift: 5, speedScale: 0.05 }
+    };
+    const U = () => UNITS[S.unitMode === 'nat' ? 'nat' : SYS[S.system].units];
+    const speedEff = () => S.speedV*SYS[S.system].speedScale;
+    // ---- labels: spin kets |±>a, or qubit kets |0>,|1>,|±>,|±i>,|θ,φ> ----
+    const QK = { z: ['|0⟩', '|1⟩'], x: ['|+⟩', '|−⟩'], y: ['|+i⟩', '|−i⟩'], n: ['|θ,φ⟩', '|θ,φ⟩'] };
+    const isQ = () => S.system === 'qubit';
+    function ketH(sg, ax){                    // HTML ket for sign '+'/'−' along axis z, x, y, n
+        if (!isQ()) return '|' + sg + '⟩<sub>' + ax + '</sub>';
+        return QK[ax][sg === '+' ? 0 : 1] + (ax === 'n' && sg !== '+' ? '<sup>⊥</sup>' : '');
+    }
+    function ketSegs(sg, ax, col){            // the same ket as drawEq segments
+        if (!isQ()) return [ { s: '|' + sg + '⟩', col }, { s: ax, sub: true, col } ];
+        const segs = [ { s: QK[ax][sg === '+' ? 0 : 1], col } ];
+        if (ax === 'n' && sg !== '+') segs.push({ s: '⊥', sup: true, col });
+        return segs;
+    }
+    function pairH(ax, long){                 // label for a basis pair (buttons)
+        if (!isQ()) return '|±⟩<sub>' + ax + '</sub>' + (ax === 'n' && long ? ' (θ, φ)' : '');
+        return { z: '|0⟩, |1⟩', x: '|±⟩', y: '|±i⟩', n: '(θ, φ)' }[ax];
+    }
+    function shortKet(sg, ax){                // outcome label inside P( )
+        if (!isQ()) return sg + '<sub>' + ax + '</sub>';
+        return ax === 'n' ? (sg === '+' ? 'θ,φ' : '⊥') : QK[ax][sg === '+' ? 0 : 1].slice(1, -1);
+    }
+    // qubit mode relabels the energy-level indices 1, 2 -> 0, 1 (source text always uses 1, 2)
+    const SUBMAP = { '₁': '₀', '₂': '₁' };
+    const relabel = s => isQ() ? String(s).replace(/[₁₂]/g, c => SUBMAP[c]) : s;
+    const relabelOrig = new WeakMap(), relabelDone = new WeakMap();
+    function relabelDOM(root){
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        for (let n = walker.nextNode(); n; n = walker.nextNode()){
+            if (n.parentElement && n.parentElement.closest('#infoModal')) continue;
+            if (!relabelOrig.has(n) || n.nodeValue !== relabelDone.get(n)) relabelOrig.set(n, n.nodeValue);
+            const m = relabel(relabelOrig.get(n));
+            if (n.nodeValue !== m) n.nodeValue = m;
+            relabelDone.set(n, m);
+        }
+    }
     function period(w){ return Math.abs(w) < 1e-9 ? Infinity : TAU/Math.abs(w); }
     function w1(){ return S.E1/U().hbar; }
     function w2(){ return S.E2/U().hbar; }
@@ -1131,7 +1204,7 @@
     function txt(ctx, s, x, y, col, size, align, base, weight){
         ctx.font = (weight || 700) + ' ' + size + 'px "Exo 2", sans-serif';
         ctx.fillStyle = col; ctx.textAlign = align || 'left'; ctx.textBaseline = base || 'alphabetic';
-        ctx.fillText(s, x, y);
+        ctx.fillText(relabel(s), x, y);
     }
     function line(ctx, x0, y0, x1, y1, col, lw, dash){
         ctx.strokeStyle = col; ctx.lineWidth = lw || 1; ctx.setLineDash(dash || []);
@@ -1166,6 +1239,7 @@
     function frameLabel(ctx, w, s){ txt(ctx, s, 10, 18, COL.dim, 12.5, 'left', 'alphabetic', 700); }
     // one-line equation from segments { s, sup, col }, centered at x and shrunk to fit maxW
     function drawEq(ctx, segs, x, y, maxW, size, align){
+        segs = segs.map(g => Object.assign({}, g, { s: relabel(g.s) }));
         const font = (g, f) => '800 ' + (g.sup || g.sub ? f*0.68 : f) + 'px "Exo 2", sans-serif';
         const width = f => segs.reduce((a, g) => { ctx.font = font(g, f); return a + ctx.measureText(g.s).width; }, 0);
         let fs = size;
@@ -1277,7 +1351,8 @@
                         txt(ctx, 'at rest', cx + r*Math.cos(a.ph), cy - r*Math.sin(a.ph), a.col, 11.5, 'center', 'middle', 700);
                     continue;
                 }
-                const span = clamp(0.28*Math.abs(a.w), 0.12, 1.3)*Math.sign(-a.w);   // e^{-iEt}: E>0 turns clockwise
+                const wTop = Math.max(Math.abs(w1()), Math.abs(w2()), Math.abs(w21()), 1e-9);
+                const span = clamp(1.1*Math.abs(a.w)/wTop, 0.12, 1.1)*Math.sign(-a.w);   // e^{-iEt}: E>0 turns clockwise
                 arcArrow(ctx, cx, cy, r, a.ph, a.ph + span, a.col, 2.2);
                 const lr = r + 14, m = a.ph + span*0.5;
                 // keep the label clear of the equation (top) and the caption line (bottom)
@@ -1287,8 +1362,8 @@
         // captions
         if (!relative){
             drawEq(ctx, [ { s: '|ψ(t)⟩ = ' },
-                { s: 'c₁e', col: COL.c1 }, { s: '−iω₁t', sup: true, col: COL.c1 }, { s: '|+⟩', col: COL.c1 }, { s: sb, sub: true, col: COL.c1 }, { s: '  +  ' },
-                { s: 'c₂e', col: COL.c2 }, { s: '−iω₂t', sup: true, col: COL.c2 }, { s: '|−⟩', col: COL.c2 }, { s: sb, sub: true, col: COL.c2 } ], w/2, 24, w - 16, 16);
+                { s: 'c₁e', col: COL.c1 }, { s: '−iω₁t', sup: true, col: COL.c1 }, ...ketSegs('+', sb, COL.c1), { s: '  +  ' },
+                { s: 'c₂e', col: COL.c2 }, { s: '−iω₂t', sup: true, col: COL.c2 }, ...ketSegs('−', sb, COL.c2) ], w/2, 24, w - 16, 16);
             txt(ctx, 'each term turns at its own ω', w/2, 42, COL.dim, 11.5, 'center', 'alphabetic', 700);
             const s1 = st.m1 > 0.02 ? 'φ₁ = ' + fmtPi(wrap(st.p1)) : 'φ₁ undefined';
             const s2 = st.m2 > 0.02 ? 'φ₂ = ' + fmtPi(wrap(st.p2)) : 'φ₂ undefined';
@@ -1297,8 +1372,8 @@
             txt(ctx, s2, 22 + ctx.measureText(s1).width, h - 10, COL.c2, 13, 'left', 'alphabetic', 800);
         } else {
             drawEq(ctx, [ { s: '|ψ(t)⟩ = ' }, { s: 'e', col: COL.dim }, { s: '−iω₁t', sup: true, col: COL.dim }, { s: ' [ ' },
-                { s: 'c₁|+⟩', col: COL.c1 }, { s: sb, sub: true, col: COL.c1 }, { s: '  +  ' },
-                { s: 'c₂e', col: COL.c2 }, { s: '−i(ω₂−ω₁)t', sup: true, col: COL.rel }, { s: '|−⟩', col: COL.c2 }, { s: sb, sub: true, col: COL.c2 }, { s: ' ]' } ], w/2, 24, w - 16, 16);
+                { s: 'c₁', col: COL.c1 }, ...ketSegs('+', sb, COL.c1), { s: '  +  ' },
+                { s: 'c₂e', col: COL.c2 }, { s: '−i(ω₂−ω₁)t', sup: true, col: COL.rel }, ...ketSegs('−', sb, COL.c2), { s: ' ]' } ], w/2, 24, w - 16, 16);
             txt(ctx, frame === 'c1' ? 'global phase e^(−iω₁t) factored out: c₁ is frozen' : 'lab frame: angle between arrows = Δφ',
                 w/2, 42, COL.dim, 11.5, 'center', 'alphabetic', 700);
             const ok = st.m1 > 0.02 && st.m2 > 0.02;
@@ -1338,7 +1413,7 @@
         curve(s => [Math.cos(TAU*s), 0, Math.sin(TAU*s)], 96, '#34425c', 1, 0.5);
         curve(s => [0, Math.cos(TAU*s), Math.sin(TAU*s)], 96, '#34425c', 1, 0.5);
         // axes
-        const axes = [[1,0,0,'x'], [0,1,0,'y'], [0,0,1,'|+⟩z'], [-1,0,0,''], [0,-1,0,''], [0,0,-1,'|−⟩z']];
+        const axes = [[1,0,0,'x'], [0,1,0,'y'], [0,0,1,'+'], [-1,0,0,''], [0,-1,0,''], [0,0,-1,'−']];
         const o = P(0, 0, 0);
         for (const [x, y, z, lab] of axes){
             const e = P(x*1.18, y*1.18, z*1.18);
@@ -1346,7 +1421,7 @@
             line(ctx, o.X, o.Y, e.X, e.Y, COL.dim, 1.2, e.d >= 0 ? [] : [3, 4]);
             ctx.globalAlpha = 1;
             if (lab){
-                if (z){ const L = P(0, 0, z*1.1); txt(ctx, lab, L.X + 8, L.Y, COL.text, 14, 'left', 'middle', 800); }
+                if (z){ const L = P(0, 0, z*1.1); drawEq(ctx, ketSegs(lab, 'z', COL.text), L.X + 8, L.Y + 5, 999, 14, 'left'); }
                 else { const L = P(x*1.32, y*1.32, 0); txt(ctx, lab, L.X, L.Y, COL.dim, 13, 'center', 'middle', 800); }
             }
         }
@@ -1419,13 +1494,14 @@
 
     // ---------- VIEW: time plots ----------
     function niceStep(raw){
-        for (const s of [0.05, 0.1, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100]) if (s >= raw) return s;
+        for (const s of [0.005, 0.01, 0.02, 0.025, 0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100]) if (s >= raw) return s;
         return 200;
     }
     function drawPlots(p){
         const { ctx, w, h } = p;
         const fin = [period(w1()), period(w2()), period(w21())].filter(isFinite);
-        const W = (fin.length ? clamp(2*Math.max(...fin), 4, 40) : 10)/S.tZoom;
+        // window: two of the slowest periods, but no more than 15 of the fastest (in whatever units are active)
+        const W = (fin.length ? Math.min(2*Math.max(...fin), 15*Math.min(...fin)) : 10)/S.tZoom;
         // the axis starts at t = 0; once t passes the window width it scrolls with t at the right edge
         const t1 = Math.max(W, S.t), t0 = t1 - W, tNow = Math.max(0, S.t);
         const L = 42, Rm = 10, T = 30, B = 30;
@@ -1458,7 +1534,7 @@
         }
         for (const s of ser){ ctx.fillStyle = s.col; ctx.beginPath(); ctx.arc(xc, Y(s.f(cur)), 4.5, 0, TAU); ctx.fill(); }
         // legend (centered): P(|+>m) and P(|->m) with their current values; the kets name the measurement basis
-        const legend = s => [ { s: 'P(|' + s.sg + '⟩', col: s.col }, { s: mb, sub: true, col: s.col }, { s: ') = ' + fmt(s.f(cur), 2), col: s.col } ];
+        const legend = s => [ { s: 'P(', col: s.col }, ...ketSegs(s.sg, mb, s.col), { s: ') = ' + fmt(s.f(cur), 2), col: s.col } ];
         const lw0 = drawEq(ctx, legend(ser[0]), -9999, -99, 999, 13, 'left'), lw1 = drawEq(ctx, legend(ser[1]), -9999, -99, 999, 13, 'left');
         let lx = L + pw/2 - (lw0 + lw1 + 66)/2;
         for (const [s, lw] of [[ser[0], lw0], [ser[1], lw1]]){
@@ -1476,11 +1552,10 @@
 
     // ---------- energy level diagram ----------
     // level diagram: energy <-> vertical position (shared by drawing and dragging)
-    const LV_LO = -3.3, LV_HI = 5.3;
     function levelGeom(h){
-        const T = 8, B = 8;
-        return { T, B, Y: E => T + (LV_HI - E)/(LV_HI - LV_LO)*(h - T - B),
-                 E: y => LV_HI - (y - T)/(h - T - B)*(LV_HI - LV_LO) };
+        const T = 8, B = 8, sy = SYS[S.system], pad = 0.04*(sy.max - sy.min), lo = sy.min - pad, hi = sy.max + pad;
+        return { T, B, Y: E => T + (hi - E)/(hi - lo)*(h - T - B),
+                 E: y => hi - (y - T)/(h - T - B)*(hi - lo) };
     }
     function drawLevels(){
         const { ctx, w, h } = fitCanvas($('levelCanvas'));
@@ -1498,12 +1573,7 @@
         txt(ctx, 'E₂ = ' + fmt(S.E2, 2) + U().E, x1 + 6, Y(S.E2) + (sep ? (S.E1 > S.E2 ? 7 : -7) : 0), COL.c2, 11.5, 'left', 'middle', 800);
         // eigenstate ket just above each line, riding with it
         const sub = S.basis.pick;
-        function ket(sign, x, y, col){
-            ctx.font = '800 13px "Exo 2", sans-serif';
-            const s = '|' + sign + '⟩', wd = ctx.measureText(s).width;
-            txt(ctx, s, x, y, col, 13, 'left', 'alphabetic', 800);
-            txt(ctx, sub, x + wd + 1, y + 4, col, 10, 'left', 'alphabetic', 800);
-        }
+        const ket = (sign, x, y, col) => drawEq(ctx, ketSegs(sign, sub, col), x, y, 999, 13, 'left');
         const kx1 = x0 + 4, kx2 = sep ? x0 + 48 : x0 + 4;
         ket('+', kx1, Y(S.E1) - 5, COL.c1);
         ket('−', kx2, Y(S.E2) - 5, COL.c2);
@@ -1563,6 +1633,7 @@
         setText('roSig', fmt(b.x, 2) + ', ' + fmt(b.y, 2) + ', ' + fmt(b.z, 2));
         const Pm = measProbs(st);
         setText('roPp', fmt(Pm[0], 3) + ', ' + fmt(Pm[1], 3));
+        if (isQ()){ relabelDOM($('timeNote')); relabelDOM(document.querySelector('.probe-panel')); }
     }
     function updateStatic(){
         $('E1Val').textContent = fmt(S.E1, 2);
@@ -1573,11 +1644,16 @@
         $('T1Val').textContent = fmt(period(w1()), 2);
         $('T2Val').textContent = fmt(period(w2()), 2);
         $('T21Val').textContent = fmt(period(w21()), 2);
-        $('omegaUnits').textContent = S.units === 'eVfs' ? 'ω in rad/fs · T in fs' : 'ω in E₀/ħ · T in ħ/E₀';
+        $('omegaUnits').textContent = 'ω in ' + U().w + ' · T in ' + U().tn;
+        document.querySelectorAll('.shiftAmt').forEach(el => { el.textContent = SYS[S.system].shift; });
+        $('initConvNote').innerHTML = 'Written in the z basis, with the ' + ketH('+', 'z') + ' coefficient real and ≥ 0';
+        $('basisNote').innerHTML = isQ() ? 'Which pair of qubit states are the energy eigenstates |E₁⟩ (energy E₁) and |E₂⟩ (energy E₂).'
+            : '|E₁⟩ = |+⟩<sub>n</sub> has energy E₁, |E₂⟩ = |−⟩<sub>n</sub> has energy E₂. For a spin, this is a magnetic field along n̂.';
+        speedText();
         document.querySelectorAll('.E-unit').forEach(el => { el.textContent = U().Eunit; });
         $('speedUnit').textContent = U().speed;
         $('hbarNote').textContent = U().hbarNote;
-        $('hamBtnLabel').innerHTML = '|+⟩<sub>' + S.basis.pick + '</sub>: ' + fmt(S.E1, 2) + U().E + '<br>|−⟩<sub>' + S.basis.pick + '</sub>: ' + fmt(S.E2, 2) + U().E;
+        $('hamBtnLabel').innerHTML = ketH('+', S.basis.pick) + ': ' + fmt(S.E1, 2) + U().E + '<br>' + ketH('−', S.basis.pick) + ': ' + fmt(S.E2, 2) + U().E;
         updateMatrix();
         $('addT1Btn').disabled = !isFinite(period(w1()));
         $('addT2Btn').disabled = !isFinite(period(w2()));
@@ -1588,15 +1664,16 @@
         const [c1, c2] = coeffs0(), sb = S.basis.pick;
         const cstr = c => Math.abs(c[1]) < 5e-4 ? fmt(c[0], 3) : '(' + fmtC(c[0], c[1]) + ')';
         const ex = E => 'e<sup>\u2212i(' + fmt(E, 2) + U().E + ')t/\u0127</sup>';
-        $('psiEq').innerHTML = '|\u03C8(t)\u27E9 = <span class="t1">' + cstr(c1) + ' ' + ex(S.E1) + ' |+\u27E9<sub>' + sb + '</sub></span>' +
-            ' + <span class="t2">' + cstr(c2) + ' ' + ex(S.E2) + ' |\u2212\u27E9<sub>' + sb + '</sub></span>';
-        $('E1Ket').innerHTML = '|+\u27E9<sub>' + sb + '</sub>';
-        $('E2Ket').innerHTML = '|\u2212\u27E9<sub>' + sb + '</sub>';
-        $('basisBtnLabel').innerHTML = '|\u00B1\u27E9<sub>' + sb + '</sub>';
+        $('psiEq').innerHTML = '|ψ(t)⟩ = <span class="t1">' + cstr(c1) + ' ' + ex(S.E1) + ' ' + ketH('+', sb) + '</span>' +
+            ' + <span class="t2">' + cstr(c2) + ' ' + ex(S.E2) + ' ' + ketH('−', sb) + '</span>';
+        $('E1Ket').innerHTML = ketH('+', sb);
+        $('E2Ket').innerHTML = ketH('−', sb);
+        $('basisBtnLabel').innerHTML = pairH(sb);
         document.querySelectorAll('.zbasis-note').forEach(el => { el.style.display = S.basis.pick === 'z' ? 'none' : ''; });
-        $('measBtnLabel').innerHTML = '|±⟩<sub>' + S.meas.pick + '</sub>';
-        $('roPpLbl').innerHTML = 'P(+<sub>' + S.meas.pick + '</sub>), P(−<sub>' + S.meas.pick + '</sub>)';
+        $('measBtnLabel').innerHTML = pairH(S.meas.pick);
+        $('roPpLbl').innerHTML = 'P(' + shortKet('+', S.meas.pick) + '), P(' + shortKet('−', S.meas.pick) + ')';
         pickers.forEach(pk => pk.sync());
+        relabelDOM(document.body);
     }
     // push the model into every input (called after energy shifts and at start-up)
     function syncInputs(){
@@ -1607,28 +1684,25 @@
 
     // ---------- state pickers (initial and final) ----------
     const BASIS = {
-        pz: { m2: 0,            ph2: 0,      html: '|+⟩<sub>z</sub>' },
-        mz: { m2: 1,            ph2: 0,      html: '|−⟩<sub>z</sub>' },
-        px: { m2: Math.SQRT1_2, ph2: 0,      html: '|+⟩<sub>x</sub>' },
-        mx: { m2: Math.SQRT1_2, ph2: PI,     html: '|−⟩<sub>x</sub>' },
-        py: { m2: Math.SQRT1_2, ph2: PI/2,   html: '|+⟩<sub>y</sub>' },
-        my: { m2: Math.SQRT1_2, ph2: 1.5*PI, html: '|−⟩<sub>y</sub>' }
+        pz: { m2: 0,            ph2: 0,      sg: '+', ax: 'z' },
+        mz: { m2: 1,            ph2: 0,      sg: '−', ax: 'z' },
+        px: { m2: Math.SQRT1_2, ph2: 0,      sg: '+', ax: 'x' },
+        mx: { m2: Math.SQRT1_2, ph2: PI,     sg: '−', ax: 'x' },
+        py: { m2: Math.SQRT1_2, ph2: PI/2,   sg: '+', ax: 'y' },
+        my: { m2: Math.SQRT1_2, ph2: 1.5*PI, sg: '−', ax: 'y' }
     };
-    function stateName(tg){
-        if (BASIS[tg.pick]) return BASIS[tg.pick].html.replace('<sub>', '').replace('</sub>', '');
-        return '(θ = ' + fmtPi(2*Math.asin(clamp(tg.m2, 0, 1))) + ', φ = ' + fmtPi(tg.ph2) + ')';
-    }
+    const basisKet = k => ketH(BASIS[k].sg, BASIS[k].ax);
     function stateLabel(tg){
-        if (BASIS[tg.pick]) return BASIS[tg.pick].html;
+        if (BASIS[tg.pick]) return basisKet(tg.pick);
         return '\u03B8 ' + fmtPi(2*Math.asin(clamp(tg.m2, 0, 1))) + ', \u03C6 ' + fmtPi(tg.ph2);
     }
     function stateSummary(ket, tg){
         const a2 = clamp(tg.m2, 0, 1), a1 = Math.sqrt(Math.max(0, 1 - a2*a2));
-        const name = BASIS[tg.pick] ? ' = ' + BASIS[tg.pick].html : '';
-        return ket + name + ' = (' + fmt(a1, 3) + ')|+⟩<sub>z</sub><br>+ (' + fmtC(a2*Math.cos(tg.ph2), a2*Math.sin(tg.ph2)) + ')|−⟩<sub>z</sub>';
+        const name = BASIS[tg.pick] ? ' = ' + basisKet(tg.pick) : '';
+        return ket + name + ' = (' + fmt(a1, 3) + ')' + ketH('+', 'z') + '<br>+ (' + fmtC(a2*Math.cos(tg.ph2), a2*Math.sin(tg.ph2)) + ')' + ketH('−', 'z');
     }
     function sliderRow(id, label, min, max, step){
-        return '<div class="slider-control" style="margin-top:4px;"><label>' + label + '</label><div class="slider-row">' +
+        return '<div class="slider-control" style="margin-top:4px;"><label id="' + id + 'Lbl">' + label + '</label><div class="slider-row">' +
             '<button class="step-btn" data-slider="' + id + '" data-dir="-1" aria-label="Decrease">&#9664;</button>' +
             '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + step + '">' +
             '<button class="step-btn" data-slider="' + id + '" data-dir="1" aria-label="Increase">&#9654;</button>' +
@@ -1639,7 +1713,7 @@
         const root = $(rootId);
         root.innerHTML =
             '<div class="basis-grid">' +
-            ['pz', 'mz', 'px', 'mx', 'py', 'my'].map(k => '<button class="btn-secondary" data-pick="' + k + '">' + BASIS[k].html + '</button>').join('') +
+            ['pz', 'mz', 'px', 'mx', 'py', 'my'].map(k => '<button class="btn-secondary" data-pick="' + k + '"></button>').join('') +
             '<button class="btn-secondary mode-btn" data-pick="angles">(θ, φ)</button>' +
             '<button class="btn-secondary mode-btn" data-pick="c2">|c₂|, φ₂</button></div>' +
             '<div class="pick-sliders coef-block" data-for="angles" style="display:none;">' +
@@ -1648,11 +1722,15 @@
             '<div class="pick-sliders coef-block c2" data-for="c2" style="display:none;">' +
                 sliderRow(pre + 'Mag2', '|c₂|, coefficient of |−⟩<sub>z</sub>', 0, 1, 0.01) +
                 sliderRow(pre + 'Ph2', 'Phase φ₂ (units of π)', 0, 2, 0.01) +
-                '<div class="auto-note">c₁, coefficient of |+⟩<sub>z</sub> = √(1 − |c₂|²) = <span id="' + pre + 'Mag1Val"></span> (real)</div>' +
-                '<div class="auto-note zbasis-note" style="display:none;">These are z-basis coefficients. The energy eigenstates are not |±⟩<sub>z</sub> now, so the coefficients in the equation above the views are different.</div></div>';
+                '<div class="auto-note">c₁, coefficient of <span id="' + pre + 'K0"></span> = √(1 − |c₂|²) = <span id="' + pre + 'Mag1Val"></span> (real)</div>' +
+                '<div class="auto-note zbasis-note" style="display:none;">These are z-basis coefficients. The energy eigenstates are not <span id="' + pre + 'ZPair"></span> now, so the coefficients in the equation above the views are different.</div></div>';
         const btns = [...root.querySelectorAll('[data-pick]')];
         const panels = [...root.querySelectorAll('.pick-sliders')];
         function sync(){
+            btns.forEach(b => { if (BASIS[b.dataset.pick]) b.innerHTML = basisKet(b.dataset.pick); });
+            $(pre + 'Mag2Lbl').innerHTML = '|c₂|, coefficient of ' + ketH('−', 'z');
+            $(pre + 'K0').innerHTML = ketH('+', 'z');
+            $(pre + 'ZPair').innerHTML = pairH('z');
             btns.forEach(b => b.classList.toggle('active-on', b.dataset.pick === tg.pick));
             panels.forEach(pn => { pn.style.display = pn.dataset.for === tg.pick ? '' : 'none'; });
             const th = 2*Math.asin(clamp(tg.m2, 0, 1));
@@ -1678,20 +1756,19 @@
     function buildAxisPicker(rootId, pre, tg, onChange){
         const root = $(rootId);
         root.innerHTML = '<div class="basis-grid-4">' +
-            ['z', 'x', 'y'].map(k => '<button class="btn-secondary" data-axis="' + k + '">|±⟩<sub>' + k + '</sub></button>').join('') +
-            '<button class="btn-secondary" data-axis="n">|±⟩<sub>n</sub> (θ, φ)</button></div>' +
+            ['z', 'x', 'y', 'n'].map(k => '<button class="btn-secondary" data-axis="' + k + '"></button>').join('') + '</div>' +
             '<div class="pick-sliders coef-block" style="display:none;">' +
                 sliderRow(pre + 'Theta', 'θ of n̂ from the z axis (units of π)', 0, 1, 0.01) +
                 sliderRow(pre + 'Phi', 'φ of n̂ from the x axis (units of π)', 0, 2, 0.01) + '</div>' +
             '<div class="state-summary"></div>';
         const btns = [...root.querySelectorAll('[data-axis]')], panel = root.querySelector('.pick-sliders'), summary = root.querySelector('.state-summary');
         function sync(){
-            btns.forEach(b => b.classList.toggle('active-on', b.dataset.axis === tg.pick));
+            btns.forEach(b => { b.innerHTML = pairH(b.dataset.axis, true); b.classList.toggle('active-on', b.dataset.axis === tg.pick); });
             panel.style.display = tg.pick === 'n' ? '' : 'none';
             $(pre + 'Theta').value = tg.th/PI; $(pre + 'ThetaVal').textContent = fmtPi(tg.th);
             $(pre + 'Phi').value = tg.ph/PI;   $(pre + 'PhiVal').textContent = fmtPi(tg.ph);
             const [e1, e2] = axisVecs(tg), sb = tg.pick;
-            const row = (sg, e) => '|' + sg + '⟩<sub>' + sb + '</sub> = (' + fmtC(e[0][0], e[0][1]) + ')|+⟩<sub>z</sub> + (' + fmtC(e[1][0], e[1][1]) + ')|−⟩<sub>z</sub>';
+            const row = (sg, e) => ketH(sg, sb) + ' = (' + fmtC(e[0][0], e[0][1]) + ')' + ketH('+', 'z') + ' + (' + fmtC(e[1][0], e[1][1]) + ')' + ketH('−', 'z');
             summary.innerHTML = row('+', e1) + '<br>' + row('−', e2);
         }
         btns.forEach(b => b.addEventListener('click', () => { tg.pick = b.dataset.axis; onChange(); }));
@@ -1719,13 +1796,13 @@
     function updateMatrix(){
         if (S.matBasis === 'n' && S.basis.pick !== 'n') S.matBasis = 'z';
         const keys = ['z', 'x', 'y'].concat(S.basis.pick === 'n' ? ['n'] : []);
-        $('matBasisGrid').innerHTML = keys.map(k => '<button class="btn-secondary' + (k === S.matBasis ? ' active-on' : '') + '" data-mb="' + k + '">|±⟩<sub>' + k + '</sub></button>').join('');
+        $('matBasisGrid').innerHTML = keys.map(k => '<button class="btn-secondary' + (k === S.matBasis ? ' active-on' : '') + '" data-mb="' + k + '">' + pairH(k) + '</button>').join('');
         const M = hamMatrix(S.matBasis);
         $('matrixBox').innerHTML = '<span class="mat-lbl">H =</span><div class="mat-br"><table>' +
             M.map(r => '<tr>' + r.map(z => '<td>' + fmtEntry(z) + '</td>').join('') + '</tr>').join('') +
-            '</table></div><span class="mat-sub">' + S.matBasis + '</span>';
+            '</table></div><span class="mat-sub">' + (isQ() ? { z: 'Z', x: 'X', y: 'Y', n: 'θφ' }[S.matBasis] : S.matBasis) + '</span>';
         const k = S.matBasis;
-        $('matrixNote').innerHTML = 'Rows and columns: |+⟩<sub>' + k + '</sub>, |−⟩<sub>' + k + '</sub>' + (S.units === 'eVfs' ? ' · entries in eV' : ' · entries in units of E₀');
+        $('matrixNote').innerHTML = 'Rows and columns: ' + ketH('+', k) + ', ' + ketH('−', k) + ' · entries in ' + U().en;
     }
     $('matBasisGrid').addEventListener('click', e => {
         const b = e.target.closest('[data-mb]'); if (!b) return;
@@ -1772,7 +1849,7 @@
         }
         function setFrom(e){
             const { y, h } = local(e), sl = $(which === 1 ? 'E1Slider' : 'E2Slider');
-            const E = clamp(Math.round(levelGeom(h).E(y)/0.05)*0.05, parseFloat(sl.min), parseFloat(sl.max));
+            const st = parseFloat(sl.step), E = clamp(Math.round(levelGeom(h).E(y)/st)*st, parseFloat(sl.min), parseFloat(sl.max));
             sl.value = E.toFixed(2); sl.dispatchEvent(new Event('input'));
         }
         cv.addEventListener('pointerdown', e => { which = nearest(e); if (!which) return; cv.setPointerCapture(e.pointerId); setFrom(e); });
@@ -1786,7 +1863,19 @@
     })();
 
     // switching units keeps the energy numbers and restarts the clock
-    modeSelector('unitsSel', 'units', u => { S.units = u; S.t = 0; updateStatic(); });
+    modeSelector('unitsSel', 'units', u => { S.unitMode = u; S.t = 0; updateStatic(); });
+    // switching systems: relabel, change units, and swap in that system's energies and slider range
+    function applySystemRanges(){
+        const sy = SYS[S.system];
+        for (const id of ['E1Slider', 'E2Slider']){ const s = $(id); s.min = sy.min; s.max = sy.max; s.step = sy.step; }
+        $('E1Slider').value = S.E1; $('E2Slider').value = S.E2;
+    }
+    modeSelector('systemSel', 'system', sys => {
+        if (sys === S.system) return;
+        S.Esaved[S.system] = { E1: S.E1, E2: S.E2 };
+        S.system = sys; S.E1 = S.Esaved[sys].E1; S.E2 = S.Esaved[sys].E2; S.t = 0;
+        applySystemRanges(); updateStatic();
+    });
 
     // Hamiltonian panel expands in place
     $('hamToggleBtn').addEventListener('click', () => {
@@ -1800,7 +1889,9 @@
     const fsEl = document.documentElement;
     const fsActive = () => document.fullscreenElement || document.webkitFullscreenElement;
     if (!(fsEl.requestFullscreen || fsEl.webkitRequestFullscreen)) $('fsBtn').style.display = 'none';
+    $('fsBtn').addEventListener('animationend', () => $('fsBtn').classList.remove('fs-pulse'));
     $('fsBtn').addEventListener('click', () => {
+        $('fsBtn').classList.remove('fs-pulse');
         if (fsActive()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
         else (fsEl.requestFullscreen || fsEl.webkitRequestFullscreen).call(fsEl);
     });
@@ -1824,9 +1915,11 @@
     $('addT1Btn').addEventListener('click', () => { setPlaying(false); S.t += period(w1()); });
     $('addT2Btn').addEventListener('click', () => { setPlaying(false); S.t += period(w2()); });
     $('addT21Btn').addEventListener('click', () => { setPlaying(false); S.t += period(w21()); });
-    $('speedSlider').addEventListener('input', e => { S.speed = parseFloat(e.target.value); $('speedVal').textContent = S.speed.toFixed(1) + '×'; });
+    function speedText(){ const v = speedEff(); $('speedVal').textContent = v < 0.1 ? v.toFixed(3) : v.toFixed(1); }
+    $('speedSlider').addEventListener('input', e => { S.speedV = parseFloat(e.target.value); speedText(); });
     function shiftE(d){
-        if (S.E1 + d < -3 || S.E2 + d < -3 || S.E1 + d > 5 || S.E2 + d > 5) return;
+        const sy = SYS[S.system]; d *= sy.shift;
+        if (Math.min(S.E1, S.E2) + d < sy.min || Math.max(S.E1, S.E2) + d > sy.max) return;
         S.E1 = Math.round((S.E1 + d)*100)/100; S.E2 = Math.round((S.E2 + d)*100)/100; S.t = 0; syncInputs();
     }
     $('shiftUpBtn').addEventListener('click', () => shiftE(1));
@@ -1864,7 +1957,7 @@
     let lastNow = performance.now();
     function frame(now){
         const dt = Math.min(0.1, (now - lastNow)/1000); lastNow = now;
-        if (S.playing) S.t += dt*S.speed;
+        if (S.playing) S.t += dt*speedEff();
         panes.forEach((p, i) => {
             if (i >= S.layout) return;
             let c = fitCanvas(p.canvas);

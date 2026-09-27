@@ -27,7 +27,8 @@ The simulation lets students watch this from four angles, one to four at a time:
 - **Measurement basis:** z, x, y or any direction n.
 - **Define Hamiltonian:** energy eigenstates |±⟩ along z (default), x, y or n; energies E₁ and E₂ set by slider or by dragging the lines in the level diagram; the Hamiltonian as a 2×2 matrix in any of those bases.
 - **Time:** play/pause (or the space bar), step, and jump ahead by exactly one period T₁, T₂ or T₂₁.
-- **Units:** eV and fs (default, ħ = 0.658 eV·fs) or dimensionless ħ = 1.
+- **System:** Spin ½ (default) or Qubit. The math is identical; qubit mode relabels |±⟩z, |±⟩x, |±⟩y as |0⟩/|1⟩, |±⟩, |±i⟩, uses 0/1 indices, and defaults to a 5 GHz qubit.
+- **Units:** physical units (default: eV and fs for a spin, μeV and ns for a qubit; ħ = 0.658 in both) or dimensionless ħ = 1.
 - **Presentation tools:** full screen, a laser pointer and a markerboard for drawing over the screen.
 
 The **INFO** button inside the simulation has the physics, a full control reference and a list of things to try in class.
