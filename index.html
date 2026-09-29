@@ -1043,6 +1043,9 @@
         meas: { pick: 'x', th: PI/4, ph: 0 },              // measurement basis |+>m, |->m
         basis: { pick: 'z', th: PI/4, ph: 0 },            // energy eigenbasis: |E1> = |+>n, |E2> = |->n
         E1: 1, E2: 2.5,                          // energies, hbar = 1
+        // drive: <E1|H|E2>/hbar = (w1/2) cos(w t), the same coupling as H/hbar = w0 sz + w1 sx cos(w t)
+        // (no controls yet: with w1 = 0 the analytic solution is used)
+        drive: { w1: 0, w: 0 }, forceNum: false,
         t: 0, playing: false, speed: 0.5,
         tZoom: 1,                                         // time-plot zoom (shared by every plot)
         layout: 4, trails: true, arcs: true, omegaLbl: true, proj: false,
@@ -1160,12 +1163,67 @@
     function w1(){ return S.E1/U().hbar; }
     function w2(){ return S.E2/U().hbar; }
     function w21(){ return (S.E2 - S.E1)/U().hbar; }
+    const driven = () => S.forceNum || S.drive.w1 !== 0;
+    // energy-basis state at time t: analytic for a static H, otherwise read from the integrated trajectory
     function state(t){
+        if (driven()){
+            const [re1, im1, re2, im2] = numState(t), m1 = Math.hypot(re1, im1), m2 = Math.hypot(re2, im2);
+            const p1 = Math.atan2(im1, re1), p2 = Math.atan2(im2, re2);
+            return { m1, m2, p1, p2, dphi: p2 - p1, re1, im1, re2, im2 };
+        }
         const [c1, c2] = coeffs0(), m1 = Math.hypot(...c1), m2 = Math.hypot(...c2);
         const p1 = Math.atan2(c1[1], c1[0]) - w1()*t, p2 = Math.atan2(c2[1], c2[0]) - w2()*t;
         return { m1, m2, p1, p2, dphi: p2 - p1,
                  re1: m1*Math.cos(p1), im1: m1*Math.sin(p1),
                  re2: m2*Math.cos(p2), im2: m2*Math.sin(p2) };
+    }
+
+    // ---------- trajectory for a time-dependent H ----------
+    // In the energy basis H(t)/hbar = [[w1, v(t)], [v(t), w2]] with v(t) = (drive.w1/2) cos(drive.w t).
+    // Each step applies the exact exponential of a 4th-order Magnus H_eff (two Gauss points), so the norm
+    // never drifts. Samples on a fixed grid from t = 0 are cached and extended on demand; any other t is one
+    // partial step from the grid point below it.
+    const traj = { key: '', dt: 0, buf: new Float64Array(0), n: 0 };
+    function trajKey(){
+        const b = S.basis, i = S.init, d = S.drive;
+        return S.E1 + ',' + S.E2 + ',' + U().hbar + ',' + b.pick + ',' + b.th + ',' + b.ph + ',' + i.m2 + ',' + i.ph2 + ',' + d.w1 + ',' + d.w;
+    }
+    function propagate(c, t, tau){            // c = [re1, im1, re2, im2] at time t -> time t + tau
+        const W1 = w1(), W2 = w2(), a = (W1 + W2)/2, dz = (W1 - W2)/2, g = Math.sqrt(3)/6;
+        // H/hbar = a + b.sigma with b = (v, 0, dz); H_eff = a + [ (b1 + b2)/2 + g tau (b2 x b1) ].sigma
+        const va = 0.5*S.drive.w1*Math.cos(S.drive.w*(t + (0.5 - g)*tau)), vb = 0.5*S.drive.w1*Math.cos(S.drive.w*(t + (0.5 + g)*tau));
+        const v = (va + vb)/2, vy = g*tau*dz*(va - vb);
+        const bm = Math.hypot(dz, v, vy), cs = Math.cos(bm*tau), sn = bm > 1e-300 ? Math.sin(bm*tau)/bm : tau;
+        // U = e^{-i a tau} [cs - i sn (v sx + vy sy + dz sz)]
+        const [r1, i1, r2, i2] = c;
+        const x1r = cs*r1 + sn*(dz*i1 + v*i2 - vy*r2), x1i = cs*i1 - sn*(dz*r1 + v*r2 + vy*i2);
+        const x2r = cs*r2 + sn*(v*i1 - dz*i2 + vy*r1), x2i = cs*i2 - sn*(v*r1 - dz*r2 - vy*i1);
+        const pc = Math.cos(a*tau), ps = -Math.sin(a*tau);
+        return [x1r*pc - x1i*ps, x1r*ps + x1i*pc, x2r*pc - x2i*ps, x2r*ps + x2i*pc];
+    }
+    function numState(t){
+        const key = trajKey();
+        if (key !== traj.key){
+            const ws = [w1(), w2(), w21(), S.drive.w, S.drive.w1].map(Math.abs).filter(w => w > 1e-9);
+            traj.key = key; traj.dt = ws.length ? TAU/Math.max(...ws)/64 : 0.05;
+            const [c1, c2] = coeffs0();
+            traj.buf = new Float64Array(4*1024); traj.buf.set([c1[0], c1[1], c2[0], c2[1]]); traj.n = 1;
+        }
+        t = Math.max(0, t);
+        const k = Math.floor(t/traj.dt);
+        if (k >= traj.n){
+            if (4*(k + 1) > traj.buf.length){
+                const nb = new Float64Array(Math.max(2*traj.buf.length, 4*(k + 1)));
+                nb.set(traj.buf.subarray(0, 4*traj.n)); traj.buf = nb;
+            }
+            for (let j = traj.n; j <= k; j++){
+                const c = propagate(Array.from(traj.buf.subarray(4*(j - 1), 4*j)), (j - 1)*traj.dt, traj.dt);
+                traj.buf.set(c, 4*j);
+            }
+            traj.n = k + 1;
+        }
+        const c = Array.from(traj.buf.subarray(4*k, 4*k + 4)), rest = t - k*traj.dt;
+        return rest > 0 ? propagate(c, k*traj.dt, rest) : c;
     }
     // psi(t) in the z basis: c1(t)|E1> + c2(t)|E2>
     function psiZ(st){
@@ -1285,19 +1343,24 @@
               wName: frame === 'c1' ? 'ω₂₁' : 'ω₂', phName: 'φ₂' }
         ];
 
-        // trails: analytic past positions (phase at t - dt is ph + w*dt)
+        // trails: past positions from the trajectory, fading with age
         if (S.trails){
             const wMax = Math.max(0.25, ...arrows.map(a => Math.abs(a.w)));
             const tau = 1.4/wMax, N = 36;
-            for (const a of arrows){
-                if (a.m < 0.02 || Math.abs(a.w) < 1e-9) continue;
+            const past = [];
+            for (let k = 0; k <= N; k++){
+                const tk = S.t - tau*k/N, sk = state(tk), rk = frame === 'c1' ? w1()*tk : 0;
+                past.push([[sk.m1, sk.p1 + rk], [sk.m2, sk.p2 + rk]]);
+            }
+            arrows.forEach((a, i) => {
+                if (a.m < 0.02 || Math.abs(a.w) < 1e-9) return;
                 for (let k = N; k >= 1; k--){
-                    const q0 = a.ph + a.w*tau*k/N, q1 = a.ph + a.w*tau*(k - 1)/N;
+                    const [m0, q0] = past[k][i], [m1, q1] = past[k - 1][i];
                     ctx.globalAlpha = 0.55*(1 - k/N);
-                    mathArc(ctx, cx, cy, R*a.m, Math.min(q0, q1), Math.max(q0, q1), a.col, 5);
+                    line(ctx, X(m0*Math.cos(q0)), Y(m0*Math.sin(q0)), X(m1*Math.cos(q1)), Y(m1*Math.sin(q1)), a.col, 5);
                 }
                 ctx.globalAlpha = 1;
-            }
+            });
         }
         // orbit circles
         for (const a of arrows){
@@ -1440,9 +1503,10 @@
         // trail
         if (S.trails && rho > 0.02 && Math.abs(W21) > 1e-9){
             const tau = 1.4/Math.max(0.25, Math.abs(W21)), N = 36;
+            const past = [];
+            for (let k = 0; k <= N; k++){ const q = blochVec(state(S.t - tau*k/N)); past.push(E(q.x, q.y, q.z)); }
             for (let k = N; k >= 1; k--){
-                const q0 = st.dphi + W21*tau*k/N, q1 = st.dphi + W21*tau*(k - 1)/N;
-                const a = E(rho*Math.cos(q0), rho*Math.sin(q0), b.z), c = E(rho*Math.cos(q1), rho*Math.sin(q1), b.z);
+                const a = past[k], c = past[k - 1];
                 ctx.globalAlpha = 0.6*(1 - k/N);
                 line(ctx, a.X, a.Y, c.X, c.Y, COL.rel, 5);
             }
@@ -1970,7 +2034,7 @@
         requestAnimationFrame(frame);
     }
     // expose the model for inspection/testing from the console
-    window.twoState = { S, state, blochVec, period, measProbs, measAxis, psiZ, labBloch, eFrame, toLab, coeffs0 };
+    window.twoState = { S, state, blochVec, period, measProbs, measAxis, psiZ, labBloch, eFrame, toLab, coeffs0, numState, traj, w1, w2, w21 };
 
     // ---------- EDIT 6: LASER ----------
     let laserActive=false;
