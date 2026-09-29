@@ -12,7 +12,9 @@ The state evolves as
 
 |ψ(t)⟩ = c₁ e^(−iE₁t/ħ) |E₁⟩ + c₂ e^(−iE₂t/ħ) |E₂⟩
 
-This form assumes a **time-independent Hamiltonian**, and this version of the simulation is limited to that case: H, its eigenstates and its eigenvalues stay fixed while the state evolves. Changing the energies or eigenstates defines a new H and restarts the clock at t = 0.
+This form assumes a **time-independent Hamiltonian**: H, its eigenstates and its eigenvalues stay fixed while the state evolves. Changing the field, energies or eigenstates defines a new H and restarts the clock at t = 0.
+
+An optional **oscillating drive** B₁cos(ωt) perpendicular to B₀ makes H time dependent: **magnetic resonance**, following L. Engelhardt, *Am. J. Phys.* **83**, 1051 (2015). The Schrödinger equation is then integrated numerically, with exactly unitary steps; because H(t) repeats every drive period, one period is enough to reach any time. On resonance the spin spirals from |+⟩z to |−⟩z in the flip time τ = 2π/Ω, with Ω = γB₁. An **illustrative** range uses strong drives (Ω/ω₀ ≈ 0.1) so the spiral and the small wiggles are visible; a **realistic** range uses laboratory strengths (1 μT to 1 mT), where a flip takes thousands to millions of Larmor turns, and shows the state with a strobe synchronized to the drive and the fast precession as a blur.
 
 The simulation lets students watch this from four angles, one to four at a time:
 
@@ -25,10 +27,11 @@ The simulation lets students watch this from four angles, one to four at a time:
 
 - **Initial state:** |±⟩ along z, x or y, any direction (θ, φ), or |c₂| and φ₂ directly. The state is written in the z basis with the |+⟩z coefficient real and non-negative.
 - **Measurement basis:** z, x, y or any direction n.
-- **Define Hamiltonian:** energy eigenstates |±⟩ along z (default), x, y or n; energies E₁ and E₂ set by slider or by dragging the lines in the level diagram; the Hamiltonian as a 2×2 matrix in any of those bases.
-- **Time:** play/pause (or the space bar), step, and jump ahead by exactly one period T₁, T₂ or T₂₁.
+- **Define Hamiltonian:** for a spin, an electron, proton or neutron in a static field B₀ (tesla, or the Larmor frequency ω₀ = γB₀), along z (default), x, y or n; for a qubit, the energies E₀ and E₁ directly. Set by slider or by dragging the lines in the level diagram. The Hamiltonian as a 2×2 matrix in any of those bases.
+- **Oscillating drive:** on/off, illustrative or realistic range, strength B₁ (or Ω), frequency ω (or the detuning), and a button to tune to resonance.
+- **Time:** play/pause (or the space bar), step, and jump ahead by exactly one period T₁, T₂ or T₂₁, or (driven) by one flip time τ.
 - **System:** Spin ½ (default) or Qubit. The math is identical; qubit mode relabels |±⟩z, |±⟩x, |±⟩y as |0⟩/|1⟩, |±⟩, |±i⟩, uses 0/1 indices, and defaults to a 5 GHz qubit.
-- **Units:** physical units (default: eV and fs for a spin, μeV and ns for a qubit; ħ = 0.658 in both) or dimensionless ħ = 1.
+- **Units:** μeV and ns (ħ = 0.658 μeV·ns), with fields in tesla for a spin; a qubit can also use dimensionless ħ = 1.
 - **Presentation tools:** full screen, a laser pointer and a markerboard for drawing over the screen.
 
 The **INFO** button inside the simulation has the physics, a full control reference and a list of things to try in class.

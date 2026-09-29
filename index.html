@@ -574,6 +574,8 @@
     #fsBtn.fs-pulse { animation:fsPulse 1.6s ease-in-out 5; }
     @media (prefers-reduced-motion: reduce) { #fsBtn.fs-pulse { animation:none; } }
     .inline-sel { display:flex; align-items:center; gap:8px; }
+    body.sys-qubit .spin-only, body.sys-spin .qubit-only { display:none !important; }
+    #particleSel .mode-opt { font-size:11.5px; }
     .inline-sel .inline-lbl { flex:0 0 54px; font-family:'Exo 2',sans-serif; font-size:13px; font-weight:800; color:var(--ink); }
     .inline-sel .mode-selector { flex:1; height:34px; }
     .inline-sel .mode-opt { font-size:12px; }
@@ -688,15 +690,37 @@
 
         <div class="control-group">
             <button class="btn-secondary state-open-btn" id="hamToggleBtn" aria-expanded="false" aria-controls="hamBody" title="Show or hide the Hamiltonian settings">
-                <span class="sob-title">&#9889; DEFINE HAMILTONIAN<br><span class="sob-sub">Energy eigenstates &amp; eigenvalues</span></span>
+                <span class="sob-title">&#9889; DEFINE HAMILTONIAN<br><span class="sob-sub" id="hamSub">Static field B&#8320;</span></span>
                 <span class="sob-val ham-sum" id="hamBtnLabel">&mdash;</span><span class="sob-edit" id="hamChevron">&#9656;</span>
             </button>
             <div id="hamBody" style="display:none;">
-            <div class="auto-note" style="margin:6px 0 0; text-align:center;">Time-independent Hamiltonian</div>
+            <div class="spin-only" style="margin:6px 0 4px;">
+                <div class="mode-selector" id="particleSel" title="Which particle's magnetic moment">
+                    <button class="mode-opt selected" data-particle="e">ELECTRON</button>
+                    <button class="mode-opt" data-particle="p">PROTON</button>
+                    <button class="mode-opt" data-particle="n">NEUTRON</button>
+                </div>
+                <div class="inline-sel" style="margin-top:6px;"><span class="inline-lbl">Set by</span>
+                <div class="mode-selector" id="fieldInSel" title="Set the Hamiltonian by magnetic field or by angular frequency">
+                    <button class="mode-opt selected" data-fieldin="B">FIELD B (T)</button>
+                    <button class="mode-opt" data-fieldin="w">&omega; = &gamma;B</button>
+                </div></div>
+                <div class="auto-note" id="partNote" style="text-align:center;">&mdash;</div>
+            </div>
             <div class="button-row" style="margin:4px 0 6px;">
-                <button class="btn-secondary ham-btn" id="basisOpenBtn" title="Choose the energy eigenstates (default |+⟩z, |−⟩z)" aria-haspopup="dialog"><span class="mat-lbl2" style="text-align:center;">EIGENSTATES<br><span style="white-space:nowrap; font-size:14px;"><span id="basisBtnLabel">|&plusmn;&#10217;<sub>z</sub></span> &#9998;</span></span></button>
+                <button class="btn-secondary ham-btn" id="basisOpenBtn" title="Choose the energy eigenstates (default |+⟩z, |−⟩z)" aria-haspopup="dialog"><span class="mat-lbl2" style="text-align:center;"><span id="basisBtnTitle">EIGENSTATES</span><br><span style="white-space:nowrap; font-size:14px;"><span id="basisBtnLabel">|&plusmn;&#10217;<sub>z</sub></span> &#9998;</span></span></button>
                 <button class="btn-secondary ham-btn" id="matrixOpenBtn" title="Show the Hamiltonian as a 2&times;2 matrix" aria-haspopup="dialog"><span class="grid-ico" aria-hidden="true"><i></i><i></i><i></i><i></i></span> <span class="mat-lbl2">MATRIX<br><small>REPRESENTATION</small></span></button>
             </div>
+            <div class="slider-control spin-only">
+                <label id="B0Lbl">B&#8320;</label>
+                <div class="slider-row">
+                    <button class="step-btn" data-slider="B0Slider" data-dir="-1" aria-label="Decrease B0">&#9664;</button>
+                    <input type="range" id="B0Slider" min="0" max="1" step="0.001" value="0.35">
+                    <button class="step-btn" data-slider="B0Slider" data-dir="1" aria-label="Increase B0">&#9654;</button>
+                    <div class="digital-display" id="B0Val">&mdash;</div>
+                </div>
+            </div>
+            <div class="qubit-only">
             <div class="slider-control">
                 <label>E&#8321; = energy of <span id="E1Ket">|+&#10217;<sub>z</sub></span> <span class="E-unit">(eV)</span></label>
                 <div class="slider-row">
@@ -715,6 +739,7 @@
                     <div class="digital-display" id="E2Val">2.50</div>
                 </div>
             </div>
+            </div>
             <canvas id="levelCanvas" role="img" aria-label="Energy level diagram showing E1, E2 and the gap between them; drag a line to change its energy"></canvas>
             <div class="omega-grid">
                 <div class="og"><span class="ol">&omega;&#8321; = E&#8321;/&hbar;</span><span class="ov" id="w1Val">&mdash;</span></div>
@@ -725,10 +750,56 @@
                 <div class="og"><span class="ol">T&#8322;&#8321;</span><span class="ov" id="T21Val">&mdash;</span></div>
             </div>
             <div class="auto-note" id="omegaUnits" style="text-align:center;">&mdash;</div>
-            <div class="button-row" style="margin-top:8px;">
+            <div class="button-row qubit-only" style="margin-top:8px;">
                 <button class="btn-secondary" id="shiftDownBtn" title="Lower both energies: the relative phase is unchanged">BOTH E &minus; <span class="shiftAmt">1</span></button>
                 <button class="btn-secondary" id="shiftUpBtn" title="Raise both energies: the relative phase is unchanged">BOTH E + <span class="shiftAmt">1</span></button>
             </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <button class="btn-secondary state-open-btn" id="drvToggleBtn" aria-expanded="false" aria-controls="drvBody" title="Show or hide the oscillating drive">
+                <span class="sob-title">&#12336; OSCILLATING DRIVE<br><span class="sob-sub" id="drvSub">B&#8321;cos(&omega;t) &perp; B&#8320;</span></span>
+                <span class="sob-val ham-sum" id="drvBtnLabel">OFF</span><span class="sob-edit" id="drvChevron">&#9656;</span>
+            </button>
+            <div id="drvBody" style="display:none;">
+                <div class="inline-sel" style="margin-top:6px;"><span class="inline-lbl">Drive</span>
+                <div class="mode-selector" id="drvOnSel" title="Switch the oscillating field on or off">
+                    <button class="mode-opt selected" data-on="0">OFF</button>
+                    <button class="mode-opt" data-on="1">ON</button>
+                </div></div>
+                <div class="inline-sel" style="margin-top:6px;"><span class="inline-lbl">Range</span>
+                <div class="mode-selector" id="drvRangeSel" title="Illustrative: a strong drive that shows the fast wiggles. Realistic: laboratory strengths, shown with a strobe.">
+                    <button class="mode-opt selected" data-range="ill">ILLUSTRATIVE</button>
+                    <button class="mode-opt" data-range="real">REALISTIC</button>
+                </div></div>
+                <div class="slider-control" style="margin-top:6px;">
+                    <label id="ampLbl">B&#8321;</label>
+                    <div class="slider-row">
+                        <button class="step-btn" data-slider="ampSlider" data-dir="-1" aria-label="Decrease the drive strength">&#9664;</button>
+                        <input type="range" id="ampSlider" min="0" max="1" step="0.001" value="0.1">
+                        <button class="step-btn" data-slider="ampSlider" data-dir="1" aria-label="Increase the drive strength">&#9654;</button>
+                        <div class="digital-display" id="ampVal">&mdash;</div>
+                    </div>
+                </div>
+                <div class="slider-control" style="margin-top:4px;">
+                    <label id="freqLbl">&omega;</label>
+                    <div class="slider-row">
+                        <button class="step-btn" data-slider="freqSlider" data-dir="-1" aria-label="Lower the drive frequency">&#9664;</button>
+                        <input type="range" id="freqSlider" min="0" max="1" step="0.001" value="0.5">
+                        <button class="step-btn" data-slider="freqSlider" data-dir="1" aria-label="Raise the drive frequency">&#9654;</button>
+                        <div class="digital-display" id="freqVal">&mdash;</div>
+                    </div>
+                </div>
+                <div class="button-row" style="margin-top:6px;">
+                    <button class="btn-secondary" id="resonBtn" title="Tune the drive to resonance">&omega; = <span id="resonLbl">&omega;&#8320;</span></button>
+                </div>
+                <div class="omega-grid">
+                    <div class="og"><span class="ol" id="w0Lbl">&omega;&#8320;</span><span class="ov" id="w0Val">&mdash;</span></div>
+                    <div class="og"><span class="ol" id="ratioLbl">&Omega;/&omega;&#8320;</span><span class="ov" id="ratioVal">&mdash;</span></div>
+                    <div class="og"><span class="ol">&tau; (flip)</span><span class="ov" id="tauVal">&mdash;</span></div>
+                </div>
+                <div class="auto-note" id="drvNote" style="text-align:center;">&mdash;</div>
             </div>
         </div>
 
@@ -791,6 +862,7 @@
                 <button class="btn-secondary" id="addT1Btn" title="Advance by one period of c1">+ T&#8321;</button>
                 <button class="btn-secondary" id="addT2Btn" title="Advance by one period of c2">+ T&#8322;</button>
                 <button class="btn-secondary" id="addT21Btn" title="Advance by one period of the relative phase">+ T&#8322;&#8321;</button>
+                <button class="btn-secondary" id="addTauBtn" title="Advance by one flip time τ of the drive" style="display:none;">+ &tau;</button>
             </div>
             <div class="slider-control" style="margin-top:8px;">
                 <label>Playback speed (<span id="speedUnit">fs</span> per second)</label>
@@ -813,7 +885,7 @@
                 <button class="btn-secondary active-on" id="omegaBtn">&omega; ARROWS</button>
                 <button class="btn-secondary" id="projBtn">PROJECTIONS</button>
             </div>
-            <div class="inline-sel" style="margin-top:8px;"><span class="inline-lbl">Units</span>
+            <div class="inline-sel qubit-only" style="margin-top:8px;"><span class="inline-lbl">Units</span>
                 <div class="mode-selector" id="unitsSel" title="Units for energy and time">
                     <button class="mode-opt selected" data-units="phys">PHYSICAL UNITS</button>
                     <button class="mode-opt" data-units="nat">&hbar; = 1</button>
@@ -845,11 +917,11 @@
         <div>Francis Marion University</div>
         <div style="margin-top:6px;">Layout adapted from the Electric Charge Simulator v7.02 by Mehmet Fatih Tasar (Georgia State University)</div>
       </div>
-      , Sep 26, 2026 &mdash; Version 1.0 &middot;
+      , Sep 29, 2026 &mdash; Version 1.1 &middot;
       <span class="cc-link"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY&#8209;NC&#8209;SA 4.0</a></span>
     </div>
     <div class="footer-center"></div>
-    <div class="footer-right">c<sub>n</sub>(t) = c<sub>n</sub>(0) e<sup>&minus;iE<sub>n</sub>t/&hbar;</sup> &middot; <span id="hbarNote">&hbar; = 0.658 eV&middot;fs</span></div>
+    <div class="footer-right"><span id="footEq">c<sub>n</sub>(t) = c<sub>n</sub>(0) e<sup>&minus;iE<sub>n</sub>t/&hbar;</sup></span> &middot; <span id="hbarNote">&hbar; = 0.658 &mu;eV&middot;ns</span></div>
 </footer>
 
 </div><!-- /appWrap -->
@@ -893,7 +965,7 @@
     <div class="info-modal-content">
         <div class="info-modal-body">
             <h2>&#9638; HAMILTONIAN MATRIX</h2>
-            <div class="auto-note" style="margin:-4px 0 8px;">H = E&#8321;|E&#8321;&#10217;&#10216;E&#8321;| + E&#8322;|E&#8322;&#10217;&#10216;E&#8322;|, written in the basis chosen below. H is time independent.</div>
+            <div class="auto-note" style="margin:-4px 0 8px;" id="matHNote">&mdash;</div>
             <div class="basis-grid-4" id="matBasisGrid"></div>
             <div class="mat-wrap" id="matrixBox"></div>
             <div class="auto-note" id="matrixNote" style="text-align:center;"></div>
@@ -908,14 +980,14 @@
         <div class="info-modal-body">
             <span class="info-modal-close" id="infoModalX">&times;</span>
             <h1 style="color:#2C3E50; text-align:center; margin-top:0;">Two-State Time Evolution</h1>
-            <p style="text-align:center; color:#666; font-style:italic;">two_state_time_evolution &nbsp;|&nbsp; v1.0 &nbsp;|&nbsp; Sep 26, 2026</p>
+            <p style="text-align:center; color:#666; font-style:italic;">two_state_time_evolution &nbsp;|&nbsp; v1.1 &nbsp;|&nbsp; Sep 29, 2026</p>
             <p style="text-align:center;">Phase, angular frequency and relative phase for a quantum system with two non-degenerate energy eigenstates.</p>
-            <p style="text-align:center;"><strong>This version assumes a time-independent Hamiltonian:</strong> H, its eigenstates and its eigenvalues stay fixed while the state evolves.</p>
+            <p style="text-align:center;">With the drive off, the Hamiltonian is <strong>time independent</strong>: H, its eigenstates and its eigenvalues stay fixed while the state evolves. The <strong>OSCILLATING DRIVE</strong> adds a field B&#8321;cos(&omega;t) and makes H time dependent: this is <strong>magnetic resonance</strong> (section 7).</p>
 
             <h2>QUICK START</h2>
             <ol>
                 <li>Choose the <strong>initial state</strong> |&psi;(0)&#10217;: one of the six spin states |&plusmn;&#10217;<sub>z</sub>, |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub>, a direction (&theta;, &phi;), or |c&#8322;| and &phi;&#8322; directly.</li>
-                <li>Choose the energies E&#8321; and E&#8322;.</li>
+                <li>Choose the particle and the static field B&#8320; (for a qubit, the energies directly).</li>
                 <li>Choose the <strong>measurement basis</strong> |&plusmn;&#10217;: the plot shows P(+) and P(&minus;), the probabilities of the two outcomes.</li>
                 <li>Press <strong>&#9654; PLAY</strong>. Watch each coefficient rotate in the complex plane at its own angular frequency.</li>
                 <li>Compare with the <strong>Relative phase</strong> view: in a frame that rotates with c&#8321;, only c&#8322; moves, and it moves at &omega;&#8322;&#8321; = (E&#8322; &minus; E&#8321;)/&hbar;.</li>
@@ -931,13 +1003,14 @@
                 <tr><td>|+&#10217;<sub>y</sub>, |&minus;&#10217;<sub>y</sub></td><td>|+i&#10217;, |&minus;i&#10217;</td></tr>
                 <tr><td>|+&#10217;<sub>n</sub>, |&minus;&#10217;<sub>n</sub></td><td>|&theta;,&phi;&#10217; = cos(&theta;/2)|0&#10217; + e<sup>i&phi;</sup>sin(&theta;/2)|1&#10217;, and its orthogonal partner |&theta;,&phi;&#10217;<sup>&perp;</sup></td></tr>
                 <tr><td>c&#8321;, c&#8322;, E&#8321;, E&#8322;, &omega;&#8322;&#8321;, T&#8322;&#8321;</td><td>c&#8320;, c&#8321;, E&#8320;, E&#8321;, &omega;&#8321;&#8320;, T&#8321;&#8320;</td></tr>
-                <tr><td>eV and fs; E from &minus;3 to 5 eV</td><td>&mu;eV and ns; E from &minus;25 to 25 &mu;eV</td></tr>
+                <tr><td>H set by a magnetic field B&#8320; (electron, proton or neutron); &mu;eV and ns</td><td>H set by the energies directly, E from &minus;25 to 25 &mu;eV; &mu;eV and ns, or &hbar; = 1</td></tr>
             </table>
             <p>The qubit defaults are E&#8320; = &minus;10.35 &mu;eV and E&#8321; = +10.35 &mu;eV, i.e. H = &minus;(&hbar;&omega;<sub>q</sub>/2)&sigma;<sub>z</sub> with a 5 GHz splitting (20.7 &mu;eV, period 0.2 ns), typical of a superconducting qubit. Each system remembers its own energies when you switch.</p>
 
             <h2>THE PHYSICS</h2>
             <h3>1. Stationary states and their phases</h3>
-            <p><strong>Assumption:</strong> the Hamiltonian is time independent. That is what makes the energy eigenstates stationary states and gives each coefficient the simple phase factor e<sup>&minus;iE<sub>n</sub>t/&hbar;</sup>. Changing E&#8321;, E&#8322; or the eigenstates is not a time-dependent H: it defines a new H and restarts the clock at t = 0.</p>
+            <p><strong>Assumption (sections 1&ndash;6):</strong> the Hamiltonian is time independent, i.e. the drive is off. That is what makes the energy eigenstates stationary states and gives each coefficient the simple phase factor e<sup>&minus;iE<sub>n</sub>t/&hbar;</sup>. Changing B&#8320;, the energies or the eigenstates is not a time-dependent H: it defines a new H and restarts the clock at t = 0. Section 7 drops the assumption.</p>
+            <p><strong>A spin in a field B&#8320;</strong> along n&#770; has H = &minus;&mu;&middot;B&#8320; with &mu; = &gamma;S (proton) or &mu; = &minus;&gamma;S (electron, neutron), so E = &plusmn;&hbar;&omega;&#8320;/2 with the <strong>Larmor frequency</strong> &omega;&#8320; = &gamma;B&#8320;. For the electron and neutron |+&#10217;<sub>n</sub> is the upper level; for the proton it is the lower one, so its phasors and its precession turn the other way. The energies are symmetric about zero, so &omega;&#8322;&#8321; = &mp;&omega;&#8320;.</p>
             <p>By default the energy eigenstates are |E&#8321;&#10217; = |+&#10217;<sub>z</sub> with energy E&#8321; and |E&#8322;&#10217; = |&minus;&#10217;<sub>z</sub> with energy E&#8322; (a spin in a magnetic field along z). The small <strong>|&plusmn;&#10217;<sub>z</sub> &#9998;</strong> button in the ENERGIES panel changes them to |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub>, or |&plusmn;&#10217;<sub>n</sub> for any direction n&#770; = (&theta;, &phi;). Writing |1&#10217; = |E&#8321;&#10217; and |2&#10217; = |E&#8322;&#10217;, the Schr&ouml;dinger equation gives</p>
             <div class="formula">|&psi;(t)&#10217; = c&#8321;(0) e<sup>&minus;iE&#8321;t/&hbar;</sup> |1&#10217; + c&#8322;(0) e<sup>&minus;iE&#8322;t/&hbar;</sup> |2&#10217;</div>
             <p>Each coefficient keeps its magnitude and only its phase changes. Writing c<sub>n</sub>(t) = |c<sub>n</sub>| e<sup>i&phi;<sub>n</sub>(t)</sup>,</p>
@@ -957,13 +1030,13 @@
             <p><strong>If the energy eigenstates are not |&plusmn;&#10217;<sub>z</sub>,</strong> the initial state is still entered in the z basis with this convention, and the coefficients that evolve are c<sub>n</sub>(0) = &#10216;E<sub>n</sub>|&psi;(0)&#10217;. These are shown in the equation above the views and are generally complex. |&plusmn;&#10217;<sub>n</sub> are written with the same convention: |+&#10217;<sub>n</sub> = cos(&theta;/2)|+&#10217;<sub>z</sub> + sin(&theta;/2)e<sup>i&phi;</sup>|&minus;&#10217;<sub>z</sub> and |&minus;&#10217;<sub>n</sub> = sin(&theta;/2)|+&#10217;<sub>z</sub> &minus; cos(&theta;/2)e<sup>i&phi;</sup>|&minus;&#10217;<sub>z</sub>.</p>
 
             <h3>3. Probabilities in the energy basis do not change</h3>
-            <p>|c<sub>n</sub>(t)|&sup2; = |c<sub>n</sub>(0)|&sup2; for all t. The arrows never change length, so the probability of measuring E&#8321; or E&#8322; is constant. The <strong>Time plots</strong> view shows Re and Im parts oscillating while |c&#8321;|&sup2; and |c&#8322;|&sup2; stay flat.</p>
+            <p>|c<sub>n</sub>(t)|&sup2; = |c<sub>n</sub>(0)|&sup2; for all t. The arrows never change length, so the probability of measuring E&#8321; or E&#8322; is constant: choose the energy eigenbasis as the measurement basis and both curves in the <strong>Measurement probabilities</strong> view stay flat.</p>
 
             <h3>4. Global phase versus relative phase</h3>
             <p>Multiplying the whole state by one overall phase e<sup>i&alpha;</sup> changes nothing measurable. Factor out c&#8321;'s phase:</p>
             <div class="formula">|&psi;(t)&#10217; = e<sup>i&phi;&#8321;(t)</sup> [ |c&#8321;| |1&#10217; + |c&#8322;| e<sup>i&Delta;&phi;(t)</sup> |2&#10217; ],&nbsp;&nbsp;&nbsp; &Delta;&phi;(t) = &Delta;&phi;(0) &minus; &omega;&#8322;&#8321; t</div>
             <div class="formula">&omega;&#8322;&#8321; = (E&#8322; &minus; E&#8321;)/&hbar;,&nbsp;&nbsp;&nbsp; T&#8322;&#8321; = 2&pi;/|&omega;&#8322;&#8321;|</div>
-            <p>Only the <strong>relative phase</strong> &Delta;&phi; is physical, and it evolves at the difference frequency. The <strong>Relative phase</strong> view shows this in a frame that rotates with c&#8321;: c&#8321; stands still and c&#8322; turns at &omega;&#8322;&#8321;. Try <strong>BOTH E + 1</strong>: both arrows speed up, but &Delta;&phi; and every measurable quantity are unchanged. Adding a constant to the Hamiltonian is unobservable.</p>
+            <p>Only the <strong>relative phase</strong> &Delta;&phi; is physical, and it evolves at the difference frequency. The <strong>Relative phase</strong> view shows this in a frame that rotates with c&#8321;: c&#8321; stands still and c&#8322; turns at &omega;&#8322;&#8321;. In <strong>QUBIT</strong> mode, try <strong>BOTH E + 5</strong>: both arrows speed up, but &Delta;&phi; and every measurable quantity are unchanged. Adding a constant to the Hamiltonian is unobservable.</p>
 
             <h3>5. What does oscillate: measurement probabilities</h3>
             <p>Choose a measurement basis |&plusmn;&#10217; (|&plusmn;&#10217;<sub>z</sub>, |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub> or |&plusmn;&#10217;<sub>n</sub>). The probabilities of the two outcomes are</p>
@@ -975,17 +1048,26 @@
             <h3>6. The Bloch sphere</h3>
             <p>With the convention above, cos(&theta;/2) = |c&#8321;|, sin(&theta;/2) = |c&#8322;|, and the azimuth is &phi; = &Delta;&phi;. The Bloch vector is (&#10216;&sigma;<sub>x</sub>&#10217;, &#10216;&sigma;<sub>y</sub>&#10217;, &#10216;&sigma;<sub>z</sub>&#10217;) = (2|c&#8321;||c&#8322;| cos &Delta;&phi;, 2|c&#8321;||c&#8322;| sin &Delta;&phi;, |c&#8321;|&sup2; &minus; |c&#8322;|&sup2;), with |+&#10217;<sub>z</sub> at the north pole. Time evolution is a <strong>precession about the energy axis</strong> (drawn in orange and blue, labeled E&#8321; and E&#8322;; the z axis by default) at &omega;&#8322;&#8321;: the latitude (the probabilities |c<sub>n</sub>|&sup2;) is fixed and only the longitude (the relative phase) changes. The green and yellow dots mark |+&#10217; and |&minus;&#10217; of the measurement basis. If the state vector makes an angle &gamma; with the green dot, then P(+) = cos&sup2;(&gamma;/2) and P(&minus;) = sin&sup2;(&gamma;/2).</p>
 
+            <h3>7. Magnetic resonance: a time-dependent H</h3>
+            <p>The <strong>OSCILLATING DRIVE</strong> adds a field B&#8321;cos(&omega;t) perpendicular to B&#8320;. With B&#8320; along z (following L. Engelhardt, <em>Am. J. Phys.</em> <strong>83</strong>, 1051 (2015)),</p>
+            <div class="formula">H(t)/&hbar; = &omega;&#8320; S<sub>z</sub> + &Omega; S<sub>x</sub> cos(&omega;t),&nbsp;&nbsp;&nbsp; &omega;&#8320; = &gamma;B&#8320;,&nbsp;&nbsp;&nbsp; &Omega; = &gamma;B&#8321;</div>
+            <p>(S in units of &hbar; for an electron or neutron; the proton's H has the opposite sign. &Omega; is called &omega;&#8321; in the paper; here &omega;&#8321; already means E&#8321;/&hbar;.) The energy eigenstates of H&#8320; are no longer stationary: |c&#8321;| and |c&#8322;| change, so the arrows change length and the Bloch vector leaves its circle. There is no closed-form solution, so the simulation integrates the Schr&ouml;dinger equation numerically (exactly unitary steps; because H(t) repeats every drive period, one period is enough to reach any time).</p>
+            <p><strong>Resonance.</strong> When &omega; = &omega;&#8320; the spin flips completely: starting in |+&#10217;<sub>z</sub>, P(&minus;<sub>z</sub>) reaches 1 at the flip time &tau; = 2&pi;/&Omega;. Off resonance the flip is incomplete, with p<sub>flip</sub> &asymp; (&Omega;/2)&sup2;/[(&Omega;/2)&sup2; + (&omega; &minus; &omega;&#8320;)&sup2;], a peak of full width &Omega; (Rabi's formula). The <strong>+ &tau;</strong> button jumps by the time of the largest flip, &pi;/&radic;((&Omega;/2)&sup2; + (&omega; &minus; &omega;&#8320;)&sup2;).</p>
+            <p><strong>Why it flips.</strong> The spin precesses about the total field B(t) (the red arrow on the Bloch sphere). The drive tips B(t) back and forth; on resonance the tip reverses each time the spin is at the bottom of its precession, so the spin spirals from the north pole to the south pole. The small <strong>wiggles</strong> in P(t), 2&omega;&#8320;/&Omega; of them per flip, come from the spin being pulled down twice per drive cycle.</p>
+            <p><strong>Illustrative or realistic.</strong> ILLUSTRATIVE uses strong drives (&Omega;/&omega;&#8320; around 0.1, as in the paper) so the spiral and the wiggles can be seen. REALISTIC uses laboratory strengths (B&#8321; from 1 &mu;T to 1 mT; for a qubit &Omega; from 0.001 to 1 rad/ns): &Omega;/&omega;&#8320; is about 10&minus;&sup2; or much less, so a flip takes hundreds to millions of Larmor turns. Then the views are <strong>strobed</strong>: the arrows are shown once every two drive periods, like a strobe light synchronized to the drive, and the fast precession is drawn as a blur (its speed on screen is only for show). The probability plot shows the band that the fast precession sweeps. The detuning is set in units of &Omega;, and playback speed scales to the flip time.</p>
+
             <h3>Units</h3>
-            <p>The <strong>UNITS</strong> toggle (in DISPLAY OPTIONS) chooses <strong>physical units</strong> (the default) or <strong>&hbar; = 1</strong>. Physical units depend on the system: <strong>eV and fs</strong> for a spin and <strong>&mu;eV and ns</strong> for a qubit. Conveniently, &hbar; = 0.6582 in both (0.6582 eV&middot;fs = 0.6582 &mu;eV&middot;ns), so a period is T = h/E = 4.136 fs &divide; E(eV), or 4.136 ns &divide; E(&mu;eV). With the spin defaults E&#8321; = 1 eV and E&#8322; = 2.5 eV: T&#8321; = 4.14 fs, T&#8322; = 1.65 fs and T&#8322;&#8321; = 2.76 fs (a 1.5 eV gap is a near-infrared photon, the scale of atomic transitions). &hbar; = 1 is dimensionless: energies in a unit &epsilon;, angular frequencies in &epsilon;/&hbar; and time in &hbar;/&epsilon;, so &omega; equals E numerically. Switching units keeps the energy numbers and resets t to 0.</p>
+            <p>A spin uses <strong>&mu;eV and ns</strong>, with fields in tesla (the <strong>SET BY</strong> toggle shows angular frequencies &omega;&#8320; = &gamma;B&#8320; and &Omega; = &gamma;B&#8321; in rad/ns instead). Conveniently &hbar; = 0.6582 &mu;eV&middot;ns, so a period is T = h/E = 4.136 ns &divide; E(&mu;eV). Gyromagnetic ratios: electron 176.1 rad/ns/T (28.02 GHz/T), proton 0.2675 rad/ns/T (42.58 MHz/T), neutron 0.1832 rad/ns/T (29.16 MHz/T). The electron default, B&#8320; = 0.35 T, is an X-band ESR field (&omega;&#8320;/2&pi; = 9.8 GHz); the proton default, 3 T, is an MRI field (128 MHz). Note that f = &omega;/2&pi;: a &ldquo;GHz&rdquo; that is really rad/ns is off by 2&pi;. A qubit uses &mu;eV and ns, or the <strong>&hbar; = 1</strong> option (in DISPLAY OPTIONS): energies in a unit &epsilon;, angular frequencies in &epsilon;/&hbar; and time in &hbar;/&epsilon;. Switching units keeps the energy numbers and resets t to 0.</p>
 
             <h2>CONTROLS</h2>
             <ul>
                 <li><strong>Initial state:</strong> the six buttons choose |&plusmn;&#10217;<sub>z</sub>, |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub>. <strong>(&theta;, &phi;)</strong> opens sliders for a direction in space, in units of &pi;. <strong>|c&#8322;|, &phi;&#8322;</strong> opens sliders for the |&minus;&#10217;<sub>z</sub> coefficient directly, and the |+&#10217;<sub>z</sub> coefficient follows from normalization. The two slider modes describe the same state, so switching between them keeps it.</li>
                 <li><strong>Measurement basis:</strong> |&plusmn;&#10217;<sub>z</sub>, |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub> or |&plusmn;&#10217;<sub>n</sub>(&theta;, &phi;). The Measurement probabilities view plots P(+) and P(&minus;); its &minus;/+ buttons zoom the time axis.</li>
-                <li><strong>Resetting the clock:</strong> changing the initial state, the energy eigenstates or an energy sets t back to 0. Changing the measurement basis does not, because it only changes what is being measured.</li>
+                <li><strong>Resetting the clock:</strong> changing the initial state, the field, the drive, the eigenstates or an energy sets t back to 0. Changing the measurement basis does not, because it only changes what is being measured.</li>
                 <li><strong>Define Hamiltonian:</strong> the DEFINE HAMILTONIAN panel starts collapsed and shows a summary of the eigenstates and energies; click it to open it in place. <strong>EIGENSTATES</strong> opens a pop-up to choose |&plusmn;&#10217;<sub>z</sub> (default), |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub> or |&plusmn;&#10217;<sub>n</sub>(&theta;, &phi;). <strong>MATRIX REPRESENTATION</strong> shows H as a 2&times;2 matrix in the z, x or y basis (or n, when the eigenstates are |&plusmn;&#10217;<sub>n</sub>). The level diagram labels each line with its ket. Changing the eigenstates resets t to 0.</li>
-                <li><strong>Energies:</strong> E&#8321;, E&#8322; from &minus;3 to 5 eV for a spin (&minus;25 to 25 &mu;eV for a qubit). The panel lists &omega;&#8321;, &omega;&#8322;, &omega;&#8322;&#8321; and the matching periods. BOTH E &plusmn; 1 shifts the zero of energy.</li>
-                <li><strong>Time:</strong> PLAY/PAUSE (or SPACE), reset to t = 0, step forward or back, and jump ahead by exactly one period T&#8321;, T&#8322; or T&#8322;&#8321;. Every arrow that period belongs to returns to where it started.</li>
+                <li><strong>Field or energies:</strong> for a spin, choose ELECTRON, PROTON or NEUTRON and set B&#8320; (0&ndash;1 T for the electron, 0&ndash;10 T for the nuclei), by slider or by dragging a level; B&#8320; DIRECTION sets its direction. For a qubit, set E&#8320; and E&#8321; from &minus;25 to 25 &mu;eV; BOTH E &plusmn; 5 shifts the zero of energy. The panel lists &omega;&#8321;, &omega;&#8322;, &omega;&#8322;&#8321; and the matching periods.</li>
+                <li><strong>Oscillating drive:</strong> ON/OFF, ILLUSTRATIVE or REALISTIC range, the strength B&#8321; (or &Omega;), and the frequency &omega; (realistic range: the detuning in units of &Omega;). &omega; = &omega;&#8320; tunes to resonance. The level diagram draws the drive's photon energy &hbar;&omega; next to the gap. The readouts give &omega;&#8320;, &Omega;/&omega;&#8320; and the flip time &tau;.</li>
+                <li><strong>Time:</strong> PLAY/PAUSE (or SPACE), reset to t = 0, step forward or back, and jump ahead by exactly one period T&#8321;, T&#8322; or T&#8322;&#8321;. Every arrow that period belongs to returns to where it started. With the drive on, the buttons are + T&#8322;&#8321; and + &tau; (one flip).</li>
                 <li><strong>Display:</strong> TRAILS show where each arrow was a moment ago. PHASE ARCS mark each phase angle from the real axis. &omega; ARROWS show the sense and rate of rotation, with the arc length proportional to &omega;. PROJECTIONS drop the Re/Im components onto the axes, and on the Bloch sphere drop the vector onto the equator.</li>
                 <li><strong>Views:</strong> Rotating phasors, Relative phase, Bloch sphere, Measurement probabilities. Any pane can show any view.</li>
                 <li><strong>Presentation tools:</strong> SET TO FULL SCREEN (top left), a laser pointer and a markerboard for drawing over the screen.</li>
@@ -996,12 +1078,17 @@
                 <li>Start in |+&#10217;<sub>z</sub>. The arrow turns, but does anything measurable change? Try every measurement basis.</li>
                 <li>Start in |+&#10217;<sub>x</sub> and measure in the x basis. Pause and press + T&#8321;. Which arrow returns to its starting position? Reset and press + T&#8322;&#8321;. What returns now, and what is P(+)?</li>
                 <li>Start in |+&#10217;<sub>x</sub> and compare the x and y measurement bases. How are the two P(+) curves shifted relative to each other? Why?</li>
-                <li>Set E&#8322; = 2E&#8321;. How many turns does c&#8322; make while c&#8321; makes one?</li>
-                <li>Press BOTH E + 1. Which views change and which do not? Why?</li>
-                <li>Make E&#8321; negative. Which way does c&#8321; turn now?</li>
-                <li>Slide E&#8322; toward E&#8321;. What happens to T&#8322;&#8321; and to the oscillation of P(+)?</li>
+                <li>In QUBIT mode, set E&#8321; = 2E&#8320;. How many turns does c&#8321; make while c&#8320; makes one?</li>
+                <li>In QUBIT mode, press BOTH E + 5. Which views change and which do not? Why?</li>
+                <li>Switch from ELECTRON to PROTON. Which way does c&#8321; turn now, and which way does the Bloch vector precess? Why?</li>
+                <li>Slide B&#8320; toward 0. What happens to T&#8322;&#8321; and to the oscillation of P(+)?</li>
                 <li>Start in |+&#10217;<sub>z</sub>, measure in the z basis, and change the energy eigenstates to |&plusmn;&#10217;<sub>x</sub>. Why do P(+) and P(&minus;) now swap back and forth between 1 and 0? Watch the Bloch sphere.</li>
                 <li>Use (&theta;, &phi;) to start at &theta; = 0.25&pi; and measure in the x basis. What is the largest P(+)? Check your answer on the Bloch sphere.</li>
+                <li><strong>Magnetic resonance.</strong> Start in |+&#10217;<sub>z</sub>, measure in z, and turn the drive ON (on resonance). Watch the Bloch vector spiral down. Press + &tau;: is the spin flipped?</li>
+                <li>Count the small wiggles in P(t) between t = 0 and &tau;. Compare with 2&omega;&#8320;/&Omega;. Halve B&#8321;: what happens to &tau; and to the number of wiggles?</li>
+                <li>Move &omega; away from &omega;&#8320; by about &Omega;/2, then by 2&Omega;. What is the largest P(&minus;<sub>z</sub>) now? Compare with Rabi's formula in section 7.</li>
+                <li>Set &omega; = 0: now B&#8321; is a static tilt. Why does the spin no longer flip?</li>
+                <li>Switch to REALISTIC. How many Larmor turns does one flip take? Why does a small B&#8321; make magnetic resonance such a precise probe of B&#8320;?</li>
             </ol>
 
             <h2>CREDITS &amp; LICENSE</h2>
@@ -1042,15 +1129,21 @@
         init: { m2: Math.SQRT1_2, ph2: 0, pick: 'px' },     // initial state |psi(0)>
         meas: { pick: 'x', th: PI/4, ph: 0 },              // measurement basis |+>m, |->m
         basis: { pick: 'z', th: PI/4, ph: 0 },            // energy eigenbasis: |E1> = |+>n, |E2> = |->n
-        E1: 1, E2: 2.5,                          // energies, hbar = 1
-        // drive: <E1|H|E2>/hbar = (w1/2) cos(w t), the same coupling as H/hbar = w0 sz + w1 sx cos(w t)
-        // (no controls yet: with w1 = 0 the analytic solution is used)
+        E1: 1, E2: 2.5,                          // energies (for a spin they follow from B0: see applyField)
+        // spin: the particle and its static field B0 (tesla), remembered per particle
+        particle: 'e', fieldIn: 'B', B0: { e: 0.35, p: 3, n: 3 },
+        // drive controls: amp = B1 (tesla) for a spin or w1 (rad/ns) for a qubit, per particle and range;
+        // w = drive angular frequency (illustrative range); det = (w - w0)/w1 (realistic range)
+        drv: { on: false, range: 'ill', det: 0, w: { e: 0, p: 0, n: 0, q: 0 },
+               amp: { e: { ill: 0.035, real: 1e-4 }, p: { ill: 0.3, real: 1e-5 }, n: { ill: 0.3, real: 1e-5 }, q: { ill: 3.145, real: 0.2 } } },
+        // what the dynamics use: <E1|H|E2>/hbar = (w1/2) cos(w t), as in H/hbar = w0 sz + w1 sx cos(w t)
+        // (with w1 = 0 the analytic solution is used)
         drive: { w1: 0, w: 0 }, forceNum: false,
         t: 0, playing: false, speed: 0.5,
         tZoom: 1,                                         // time-plot zoom (shared by every plot)
         layout: 4, trails: true, arcs: true, omegaLbl: true, proj: false,
         system: 'spin', unitMode: 'phys', matBasis: 'z', speedV: 0.5,
-        Esaved: { spin: { E1: 1, E2: 2.5 }, qubit: { E1: -10.35, E2: 10.35 } },   // each system keeps its own energies
+        Esaved: { qubit: { E1: -10.35, E2: 10.35 } },   // the qubit keeps its energies while a spin is shown
         yaw: YAW0, pitch: PITCH0
     };
 
@@ -1111,19 +1204,34 @@
         return [inner(e1, psi), inner(e2, psi)];
     }
     function mags(){ const [c1, c2] = coeffs0(); return [Math.hypot(...c1), Math.hypot(...c2)]; }
-    // units: energies in eV and time in fs (hbar = 0.6582 eV fs), or dimensionless with hbar = 1
+    // units: energies in μeV and time in ns (hbar = 0.6582 μeV ns), or dimensionless with hbar = 1 (qubit only)
     const UNITS = {
-        eVfs:  { hbar: 0.6582119569, E: ' eV',  t: ' fs', tn: 'fs',  tAxis: 't (fs)',  w: 'rad/fs', en: 'eV',  Eunit: '(eV)',  hbarNote: 'ħ = 0.658 eV·fs', speed: 'fs' },
         ueVns: { hbar: 0.6582119569, E: ' μeV', t: ' ns', tn: 'ns',  tAxis: 't (ns)',  w: 'rad/ns', en: 'μeV', Eunit: '(μeV)', hbarNote: 'ħ = 0.658 μeV·ns', speed: 'ns' },
         nat:   { hbar: 1,            E: '',     t: '',    tn: 'ħ/ε', tAxis: 't (ħ/ε)', w: 'ε/ħ',    en: 'units of ε', Eunit: '(units of ε)', hbarNote: 'ħ = 1', speed: 'time units' }
     };
     // per-system settings: physical units, energy slider range, BOTH E ± step, playback-speed scale
+    // (a spin's energy range and speed come from its particle, below)
     const SYS = {
-        spin:  { units: 'eVfs',  min: -3,  max: 5,  step: 0.05, shift: 1, speedScale: 1 },
+        spin:  { units: 'ueVns' },
         qubit: { units: 'ueVns', min: -25, max: 25, step: 0.05, shift: 5, speedScale: 0.05 }
     };
-    const U = () => UNITS[S.unitMode === 'nat' ? 'nat' : SYS[S.system].units];
-    const speedEff = () => S.speedV*SYS[S.system].speedScale;
+    // particles: gyromagnetic ratio |gamma| (rad/ns/T, CODATA 2018), sgn = +1 if the moment is antiparallel
+    // to the spin (then |+> along B0 is the UPPER level), slider ranges in tesla, and a playback scale (ns/s)
+    // that gives about one Larmor turn per 4 s at the default field and 0.5x speed
+    const PART = {
+        e: { name: 'electron', gamma: 176.0859630, g: '−2.0023', sgn:  1, B0max: 1,  B0step: 0.001, B1max: 0.5, B1step: 0.0005, wStep: 0.05,  speed: 0.05 },
+        p: { name: 'proton',   gamma: 0.2675221874, g: '+5.586', sgn: -1, B0max: 10, B0step: 0.01,  B1max: 5,   B1step: 0.005,  wStep: 0.001, speed: 4 },
+        n: { name: 'neutron',  gamma: 0.1832471,  g: '−3.826',   sgn:  1, B0max: 10, B0step: 0.01,  B1max: 5,   B1step: 0.005,  wStep: 0.001, speed: 6 }
+    };
+    const isSpin = () => S.system === 'spin';
+    const PT = () => PART[S.particle];
+    const U = () => UNITS[S.unitMode === 'nat' && !isSpin() ? 'nat' : SYS[S.system].units];
+    // energy range of the level diagram (and the qubit sliders)
+    function Erange(){
+        if (!isSpin()) return { min: SYS.qubit.min, max: SYS.qubit.max };
+        const m = 1.08*U().hbar*PT().gamma*PT().B0max/2;
+        return { min: -m, max: m };
+    }
     // ---- labels: spin kets |±>a, or qubit kets |0>,|1>,|±>,|±i>,|θ,φ> ----
     const QK = { z: ['|0⟩', '|1⟩'], x: ['|+⟩', '|−⟩'], y: ['|+i⟩', '|−i⟩'], n: ['|θ,φ⟩', '|θ,φ⟩'] };
     const isQ = () => S.system === 'qubit';
@@ -1163,6 +1271,49 @@
     function w1(){ return S.E1/U().hbar; }
     function w2(){ return S.E2/U().hbar; }
     function w21(){ return (S.E2 - S.E1)/U().hbar; }
+    // ---------- the field model and the drive ----------
+    const w0 = () => Math.abs(w21());
+    const dKey = () => isSpin() ? S.particle : 'q';
+    const drvAmp = () => S.drv.amp[dKey()][S.drv.range];                 // B1 (T) or w1 (rad/ns)
+    // drive strength as a (positive) angular frequency: w1 = |gamma| B1 for a spin
+    const drvW1 = () => isSpin() ? PT().gamma*drvAmp() : drvAmp();
+    const drvOn = () => S.drv.on && drvAmp() > 0;
+    const realistic = () => drvOn() && S.drv.range === 'real';
+    // push the controls into the model: a spin's energies follow from B0, and the drive from its controls
+    function applyField(){
+        if (isSpin()){ const E = PT().sgn*U().hbar*PT().gamma*S.B0[S.particle]/2; S.E1 = E; S.E2 = -E; }
+        const W1 = drvW1();
+        S.drive.w1 = drvOn() ? (isSpin() ? PT().sgn : 1)*W1 : 0;
+        S.drive.w = S.drv.range === 'real' ? Math.max(0, w0() + S.drv.det*W1) : S.drv.w[dKey()];
+    }
+    // time for the largest flip, pi/Omega with Omega = sqrt((w1/2)^2 + (w - w0)^2) (rotating-wave estimate;
+    // tau = 2 pi/w1 on resonance, as in the AJP paper)
+    function tauFlip(){
+        if (!drvOn()) return Infinity;
+        const W1 = drvW1(), D = S.drive.w - w0();
+        return PI/Math.hypot(W1/2, D);
+    }
+    // the realistic range is shown with a strobe: the state once every two drive periods (so every phase
+    // factor e^{-iE t/hbar} has come round), with the fast precession drawn as a blur
+    const strobeT = () => realistic() && S.drive.w > 0 ? 2*TAU/S.drive.w : 0;
+    const strobe = t => { const T = strobeT(); return T ? Math.floor(t/T)*T : t; };
+    const speedEff = () => realistic() ? S.speedV*tauFlip()/5 : S.speedV*(isSpin() ? PT().speed : SYS.qubit.speedScale);
+    // readable numbers: tesla with a prefix, and 3 significant figures
+    function sig(v, n){
+        if (!isFinite(v)) return '∞';
+        const a = Math.abs(v);
+        let str = a === 0 ? '0' : a >= 1e4 || a < 1e-3 ? v.toExponential(n - 1) : v.toPrecision(n);
+        if (str.includes('.') && !str.includes('e')) str = str.replace(/0+$/, '').replace(/\.$/, '');
+        return str.replace('-', '−');
+    }
+    function fmtT(B){ const a = Math.abs(B); return a >= 0.1 ? sig(B, 3) + ' T' : a >= 1e-4 ? sig(B*1e3, 3) + ' mT' : sig(B*1e6, 3) + ' μT'; }
+    const fmtE = v => fmt(v, Math.abs(v) < 1 && v !== 0 ? 3 : 2);
+    // a time with its unit; long times in ns read as microseconds or milliseconds
+    function fmtTime(v){
+        if (U() === UNITS.ueVns && Math.abs(v) >= 1e6) return sig(v/1e6, 4) + ' ms';
+        if (U() === UNITS.ueVns && Math.abs(v) >= 1e4) return sig(v/1e3, 4) + ' μs';
+        return fmt(v, 2) + U().t;
+    }
     const driven = () => S.forceNum || S.drive.w1 !== 0;
     // energy-basis state at time t: analytic for a static H, otherwise read from the integrated trajectory
     function state(t){
@@ -1181,13 +1332,9 @@
     // ---------- trajectory for a time-dependent H ----------
     // In the energy basis H(t)/hbar = [[w1, v(t)], [v(t), w2]] with v(t) = (drive.w1/2) cos(drive.w t).
     // Each step applies the exact exponential of a 4th-order Magnus H_eff (two Gauss points), so the norm
-    // never drifts. Samples on a fixed grid from t = 0 are cached and extended on demand; any other t is one
-    // partial step from the grid point below it.
-    const traj = { key: '', dt: 0, buf: new Float64Array(0), n: 0 };
-    function trajKey(){
-        const b = S.basis, i = S.init, d = S.drive;
-        return S.E1 + ',' + S.E2 + ',' + U().hbar + ',' + b.pick + ',' + b.th + ',' + b.ph + ',' + i.m2 + ',' + i.ph2 + ',' + d.w1 + ',' + d.w;
-    }
+    // never drifts. H(t) repeats every drive period T, so only one period is integrated: its propagators U(s)
+    // on a grid 0 <= s <= T are cached, and psi(nT + s) = U(s) U(T)^n psi(0), with U(T)^n in closed form.
+    // That costs the same at t = 10^7 T as at t = T.
     function propagate(c, t, tau){            // c = [re1, im1, re2, im2] at time t -> time t + tau
         const W1 = w1(), W2 = w2(), a = (W1 + W2)/2, dz = (W1 - W2)/2, g = Math.sqrt(3)/6;
         // H/hbar = a + b.sigma with b = (v, 0, dz); H_eff = a + [ (b1 + b2)/2 + g tau (b2 x b1) ].sigma
@@ -1201,29 +1348,57 @@
         const pc = Math.cos(a*tau), ps = -Math.sin(a*tau);
         return [x1r*pc - x1i*ps, x1r*ps + x1i*pc, x2r*pc - x2i*ps, x2r*ps + x2i*pc];
     }
+    const mulU = (U, j, c) => {                // U(s_j) c, with U stored column by column (8 floats per grid point)
+        const o = 8*j, [r1, i1, r2, i2] = c;
+        return [r1*U[o]   - i1*U[o+1] + r2*U[o+4] - i2*U[o+5], r1*U[o+1] + i1*U[o]   + r2*U[o+5] + i2*U[o+4],
+                r1*U[o+2] - i1*U[o+3] + r2*U[o+6] - i2*U[o+7], r1*U[o+3] + i1*U[o+2] + r2*U[o+7] + i2*U[o+6]];
+    };
+    const traj = { key: '', T: 0, M: 0, h: 0, U: null, c0: null, al: 0, be: 0, sb: 0, d0: null };
+    function trajKey(){
+        const b = S.basis, i = S.init, d = S.drive;
+        return S.E1 + ',' + S.E2 + ',' + U().hbar + ',' + b.pick + ',' + b.th + ',' + b.ph + ',' + i.m2 + ',' + i.ph2 + ',' + d.w1 + ',' + d.w;
+    }
+    function buildTraj(){
+        const [c1, c2] = coeffs0();
+        traj.c0 = [c1[0], c1[1], c2[0], c2[1]];
+        if (S.drive.w === 0){ traj.T = 0; return; }          // a static field: one exact exponential covers any t
+        const W = Math.abs(S.drive.w), fmax = Math.max(Math.abs(w1()), Math.abs(w2())) + Math.abs(S.drive.w1)/2 + W;
+        traj.T = TAU/W; traj.M = clamp(Math.ceil(64*fmax/W), 128, 200000); traj.h = traj.T/traj.M;
+        const M = traj.M, h = traj.h, Ub = new Float64Array(8*(M + 1));
+        Ub.set([1, 0, 0, 0, 0, 0, 1, 0]);
+        for (let j = 1; j <= M; j++){
+            const o = 8*(j - 1);
+            Ub.set(propagate([Ub[o], Ub[o+1], Ub[o+2], Ub[o+3]], (j - 1)*h, h), 8*j);
+            Ub.set(propagate([Ub[o+4], Ub[o+5], Ub[o+6], Ub[o+7]], (j - 1)*h, h), 8*j + 4);
+        }
+        traj.U = Ub;
+        // U(T) = e^{i al} V with V in SU(2): V = cos(be) - i sin(be) n.sigma
+        const o = 8*M, [ar, ai, br, bi, cr, ci, dr, di] = Ub.subarray(o, o + 8);   // columns (a, b), (c, d)
+        const detR = ar*dr - ai*di - (cr*br - ci*bi), detI = ar*di + ai*dr - (cr*bi + ci*br);
+        traj.al = Math.atan2(detI, detR)/2;
+        const ec = Math.cos(traj.al), es = -Math.sin(traj.al);            // e^{-i al}
+        const V11r = ar*ec - ai*es, V11i = ar*es + ai*ec, V22r = dr*ec - di*es, V22i = dr*es + di*ec;
+        const V12r = cr*ec - ci*es, V12i = cr*es + ci*ec;
+        // atan2, not acos: be must stay accurate near 0 and pi, because it is multiplied by n
+        traj.be = Math.atan2(Math.hypot((V22i - V11i)/2, V12r, V12i), (V11r + V22r)/2); traj.sb = Math.sin(traj.be);
+        // d0 = (V - cos(be)) c0, so V^n c0 = cos(n be) c0 + [sin(n be)/sin(be)] d0
+        const Vc = mulU(Ub, M, traj.c0), cb = Math.cos(traj.be);
+        const Vc0 = [Vc[0]*ec - Vc[1]*es, Vc[0]*es + Vc[1]*ec, Vc[2]*ec - Vc[3]*es, Vc[2]*es + Vc[3]*ec];
+        traj.d0 = Vc0.map((x, k) => x - cb*traj.c0[k]);
+    }
     function numState(t){
         const key = trajKey();
-        if (key !== traj.key){
-            const ws = [w1(), w2(), w21(), S.drive.w, S.drive.w1].map(Math.abs).filter(w => w > 1e-9);
-            traj.key = key; traj.dt = ws.length ? TAU/Math.max(...ws)/64 : 0.05;
-            const [c1, c2] = coeffs0();
-            traj.buf = new Float64Array(4*1024); traj.buf.set([c1[0], c1[1], c2[0], c2[1]]); traj.n = 1;
-        }
+        if (key !== traj.key){ traj.key = key; buildTraj(); }
+        if (traj.T === 0) return propagate(traj.c0, 0, t);
         t = Math.max(0, t);
-        const k = Math.floor(t/traj.dt);
-        if (k >= traj.n){
-            if (4*(k + 1) > traj.buf.length){
-                const nb = new Float64Array(Math.max(2*traj.buf.length, 4*(k + 1)));
-                nb.set(traj.buf.subarray(0, 4*traj.n)); traj.buf = nb;
-            }
-            for (let j = traj.n; j <= k; j++){
-                const c = propagate(Array.from(traj.buf.subarray(4*(j - 1), 4*j)), (j - 1)*traj.dt, traj.dt);
-                traj.buf.set(c, 4*j);
-            }
-            traj.n = k + 1;
-        }
-        const c = Array.from(traj.buf.subarray(4*k, 4*k + 4)), rest = t - k*traj.dt;
-        return rest > 0 ? propagate(c, k*traj.dt, rest) : c;
+        const n = Math.floor(t/traj.T), s = t - n*traj.T, nb = n*traj.be;
+        const k = Math.abs(traj.sb) > 1e-12 ? Math.sin(nb)/traj.sb : n*Math.cos((n - 1)*traj.be);
+        const cn = Math.cos(nb), pr = Math.cos(n*traj.al), pi = Math.sin(n*traj.al);
+        const v = traj.c0.map((x, i) => cn*x + k*traj.d0[i]);
+        const psi = [v[0]*pr - v[1]*pi, v[0]*pi + v[1]*pr, v[2]*pr - v[3]*pi, v[2]*pi + v[3]*pr];    // U(T)^n psi(0)
+        const j = Math.min(traj.M - 1, Math.floor(s/traj.h)), rest = s - j*traj.h;
+        const c = mulU(traj.U, j, psi);
+        return rest > 0 ? propagate(c, j*traj.h, rest) : c;
     }
     // psi(t) in the z basis: c1(t)|E1> + c2(t)|E2>
     function psiZ(st){
@@ -1243,6 +1418,7 @@
         return { x: k*Math.cos(st.dphi), y: k*Math.sin(st.dphi), z: st.m1*st.m1 - st.m2*st.m2 };
     }
     function stepSize(){
+        if (realistic()) return tauFlip()/50;
         const ws = [w1(), w2(), w21()].map(Math.abs).filter(w => w > 1e-9);
         return ws.length ? (TAU/Math.max(...ws))/24 : 0.25;
     }
@@ -1333,8 +1509,8 @@
         txt(ctx, '1', X(1) + 4, cy + 13, COL.dim, 11); txt(ctx, '−1', X(-1) - 4, cy + 13, COL.dim, 11, 'right');
         txt(ctx, 'i', cx + 5, Y(1) - 4, COL.dim, 11); txt(ctx, '−i', cx + 5, Y(-1) + 13, COL.dim, 11);
 
-        const st = state(S.t), sb = S.basis.pick;
-        const rot = frame === 'c1' ? w1()*S.t : 0;          // multiply by e^{+iE1 t} in the rotating frame
+        const tv = strobe(S.t), st = state(tv), sb = S.basis.pick;
+        const rot = frame === 'c1' ? w1()*tv : 0;          // multiply by e^{+iE1 t} in the rotating frame
         const W21 = w21();
         const arrows = [
             { m: st.m1, ph: st.p1 + rot, col: COL.c1, name: 'c₁', w: frame === 'c1' ? 0 : w1(),
@@ -1343,8 +1519,8 @@
               wName: frame === 'c1' ? 'ω₂₁' : 'ω₂', phName: 'φ₂' }
         ];
 
-        // trails: past positions from the trajectory, fading with age
-        if (S.trails){
+        // trails: past positions from the trajectory, fading with age (not under the strobe)
+        if (S.trails && !realistic()){
             const wMax = Math.max(0.25, ...arrows.map(a => Math.abs(a.w)));
             const tau = 1.4/wMax, N = 36;
             const past = [];
@@ -1405,7 +1581,7 @@
             if (a.m >= 0.02) txt(ctx, a.name, cx + lr*Math.cos(a.ph), cy - lr*Math.sin(a.ph), a.col, 14, 'center', 'middle', 800);
         }
         // angular-frequency arrows (arc length proportional to omega, drawn beyond the tip)
-        if (S.omegaLbl){
+        if (S.omegaLbl && !realistic()){
             for (const a of arrows){
                 if (a.m < 0.05) continue;
                 const r = R*a.m + 32;
@@ -1423,7 +1599,15 @@
             }
         }
         // captions
-        if (!relative){
+        if (drvOn()){
+            drawEq(ctx, [ { s: '|ψ(t)⟩ = ' }, { s: 'c₁(t)', col: COL.c1 }, ...ketSegs('+', sb, COL.c1), { s: '  +  ' },
+                { s: 'c₂(t)', col: COL.c2 }, ...ketSegs('−', sb, COL.c2) ], w/2, 24, w - 16, 16);
+            txt(ctx, realistic() ? 'strobed · the drive changes |c₁|, |c₂|'
+                : relative ? 'frame turning at ω₁ · |c₁|, |c₂| change' : 'the drive changes |c₁| and |c₂|',
+                w/2, 42, COL.dim, 11.5, 'center', 'alphabetic', 700);
+            txt(ctx, '|c₁|² = ' + fmt(st.m1*st.m1, 3), 10, h - 10, COL.c1, 13, 'left', 'alphabetic', 800);
+            txt(ctx, '|c₂|² = ' + fmt(st.m2*st.m2, 3), 130, h - 10, COL.c2, 13, 'left', 'alphabetic', 800);
+        } else if (!relative){
             drawEq(ctx, [ { s: '|ψ(t)⟩ = ' },
                 { s: 'c₁e', col: COL.c1 }, { s: '−iω₁t', sup: true, col: COL.c1 }, ...ketSegs('+', sb, COL.c1), { s: '  +  ' },
                 { s: 'c₂e', col: COL.c2 }, { s: '−iω₂t', sup: true, col: COL.c2 }, ...ketSegs('−', sb, COL.c2) ], w/2, 24, w - 16, 16);
@@ -1443,7 +1627,7 @@
             txt(ctx, (ok ? 'Δφ = ' + fmtPi(wrap(st.dphi)) : 'Δφ undefined') + '  ·  ω₂−ω₁ = ' + fmt(W21, 2),
                 10, h - 10, COL.rel, 13, 'left', 'alphabetic', 800);
         }
-        txt(ctx, 't = ' + fmt(S.t, 2) + U().t, w - 10, h - 10, COL.text, 13, 'right', 'alphabetic', 800);
+        txt(ctx, 't = ' + fmtTime(S.t), w - 10, h - 10, COL.text, 13, 'right', 'alphabetic', 800);
     }
 
     // ---------- VIEW: Bloch sphere ----------
@@ -1496,12 +1680,37 @@
             ctx.globalAlpha = 1;
             txt(ctx, lab, e.X - 9, e.Y - 9, col, 13.5, 'right', 'middle', 800);
         }
-        const st = state(S.t), b = blochVec(st), W21 = w21();       // b is in the energy frame
-        const rho = Math.hypot(b.x, b.y);
-        // precession path: circle about the energy axis
-        if (rho > 0.02) curve(s => [rho*Math.cos(TAU*s), rho*Math.sin(TAU*s), b.z], 96, COL.rel, 1.3, 0.35, [5, 4], E);
+        const tv = strobe(S.t), st = state(tv), b = blochVec(st), W21 = w21();       // b is in the energy frame
+        const rho = Math.hypot(b.x, b.y), drv = drvOn(), real = realistic();
+        // precession path: circle about the energy axis (a static field only)
+        if (rho > 0.02 && !drv) curve(s => [rho*Math.cos(TAU*s), rho*Math.sin(TAU*s), b.z], 96, COL.rel, 1.3, 0.35, [5, 4], E);
+        // driven: the path so far, over the last flip time or the last 12 Larmor turns (strobed: the last flip time)
+        if (drv && S.trails){
+            const span = Math.min(tv, real ? tauFlip() : Math.min(tauFlip(), 12*period(W21))), N = real ? 300 : 1500, pts = [];
+            for (let k = 0; k <= N; k++){ const q = blochVec(state(strobe(tv - span*k/N))); pts.push(E(q.x, q.y, q.z)); }
+            for (let k = N; k >= 1; k--){
+                const a = pts[k], c = pts[k - 1];
+                ctx.globalAlpha = 0.15 + 0.7*(1 - k/N);
+                line(ctx, a.X, a.Y, c.X, c.Y, COL.rel, 1.6, (a.d + c.d) >= 0 ? [] : [2, 3]);
+            }
+            ctx.globalAlpha = 1;
+        }
+        // strobed: the fast precession as a blur, a comet going round the cone. The real rate (hundreds of
+        // turns per second of playback) cannot be shown at 60 frames/s, so it turns at 6 rev/s: fast, but still
+        // under half a turn per frame, so it does not alias; the long tail makes each frame read as motion blur
+        if (real && rho > 0.02){
+            curve(s => [rho*Math.cos(TAU*s), rho*Math.sin(TAU*s), b.z], 96, COL.rel, 1, 0.3, [2, 3], E);
+            const q0 = st.dphi - Math.sign(W21)*TAU*6*performance.now()/1000, n = 60;
+            for (let k = 0; k < n; k++){
+                const qa = q0 + Math.sign(W21)*3*k/n, qb = q0 + Math.sign(W21)*3*(k + 1)/n;
+                const a = E(rho*Math.cos(qa), rho*Math.sin(qa), b.z), c = E(rho*Math.cos(qb), rho*Math.sin(qb), b.z);
+                ctx.globalAlpha = 0.75*(1 - k/n)*((a.d + c.d) >= 0 ? 1 : 0.4);
+                line(ctx, a.X, a.Y, c.X, c.Y, COL.state, 7 - 4*k/n);
+            }
+            ctx.globalAlpha = 1;
+        }
         // trail
-        if (S.trails && rho > 0.02 && Math.abs(W21) > 1e-9){
+        if (S.trails && !drv && rho > 0.02 && Math.abs(W21) > 1e-9){
             const tau = 1.4/Math.max(0.25, Math.abs(W21)), N = 36;
             const past = [];
             for (let k = 0; k <= N; k++){ const q = blochVec(state(S.t - tau*k/N)); past.push(E(q.x, q.y, q.z)); }
@@ -1544,43 +1753,72 @@
             for (const q of pts) ctx.lineTo(q.X, q.Y); ctx.stroke();
             head(ctx, pts[n - 3].X, pts[n - 3].Y, pts[n].X, pts[n].Y, COL.rel, 8);
         }
+        // the field: B(t) = B0 + B1 cos(wt) along x' (the direction the spin precesses about)
+        if (drv && !real){
+            const sg = isSpin() ? PT().sgn : 1, bz = w21() === 0 ? 0 : -sg*W21/2, bx = sg*0.5*S.drive.w1*Math.cos(S.drive.w*tv);
+            const L = Math.hypot(bx, bz) || 1, f = E(1.25*bx/L, 0, 1.25*bz/L);
+            ctx.globalAlpha = f.d >= 0 ? 1 : 0.6;
+            arrow(ctx, o.X, o.Y, f.X, f.Y, '#f87171', 2.2, 10);
+            txt(ctx, isSpin() ? 'B(t)' : 'H(t)', f.X + 8, f.Y - 8, '#f87171', 12.5, 'left', 'middle', 800);
+            ctx.globalAlpha = 1;
+        }
         // state vector
         ctx.globalAlpha = tip.d >= 0 ? 1 : 0.7;
         arrow(ctx, o.X, o.Y, tip.X, tip.Y, COL.state, 3.5, 13);
         ctx.fillStyle = COL.rel; ctx.beginPath(); ctx.arc(tip.X, tip.Y, 4.5, 0, TAU); ctx.fill();
         ctx.globalAlpha = 1;
-        frameLabel(ctx, w, 'BLOCH SPHERE · dots = measurement basis · drag');
+        frameLabel(ctx, w, real ? 'BLOCH SPHERE · strobed · blur = fast precession' : 'BLOCH SPHERE · dots = measurement basis · drag');
         const theta = 2*Math.atan2(st.m2, st.m1);
-        txt(ctx, 'angle from E₁ axis = ' + fmtPi(theta) + '  (fixed)', 10, h - 28, COL.text, 12.5, 'left', 'alphabetic', 700);
-        txt(ctx, 'azimuth = Δφ = ' + (rho > 0.02 ? fmtPi(wrap(st.dphi)) : 'undefined') +
-                 '  · precesses at ω₂₁ = ' + fmt(W21, 2), 10, h - 10, COL.rel, 12.5, 'left', 'alphabetic', 800);
+        txt(ctx, 'angle from E₁ axis = ' + fmtPi(theta) + (drv ? '  (the drive changes it)' : '  (fixed)'), 10, h - 28, COL.text, 12.5, 'left', 'alphabetic', 700);
+        txt(ctx, drv ? (real ? 'arrow: once per 2 drive periods · one flip in τ = ' + (tauFlip() < 1e4 ? sig(tauFlip(), 3) + U().t : fmtTime(tauFlip()))
+                             : 'precesses about ' + (isSpin() ? 'B(t)' : 'H(t)') + ', which tips back and forth at ω')
+                     : 'azimuth = Δφ = ' + (rho > 0.02 ? fmtPi(wrap(st.dphi)) : 'undefined') + '  · precesses at ω₂₁ = ' + sig(W21, 3),
+            10, h - 10, COL.rel, 12.5, 'left', 'alphabetic', 800);
     }
 
     // ---------- VIEW: time plots ----------
     function niceStep(raw){
-        for (const s of [0.005, 0.01, 0.02, 0.025, 0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100]) if (s >= raw) return s;
-        return 200;
+        const p = Math.pow(10, Math.floor(Math.log10(raw)));
+        for (const m of [1, 2, 2.5, 5]) if (m*p >= raw*(1 - 1e-9)) return m*p;
+        return 10*p;
     }
     function drawPlots(p){
         const { ctx, w, h } = p;
         const fin = [period(w1()), period(w2()), period(w21())].filter(isFinite);
         // window: two of the slowest periods, but no more than 15 of the fastest (in whatever units are active)
-        const W = (fin.length ? Math.min(2*Math.max(...fin), 15*Math.min(...fin)) : 10)/S.tZoom;
+        // (driven: one full flip-and-return, 2 tau)
+        const W = (drvOn() && isFinite(tauFlip()) ? 2*tauFlip() : fin.length ? Math.min(2*Math.max(...fin), 15*Math.min(...fin)) : 10)/S.tZoom;
         // the axis starts at t = 0; once t passes the window width it scrolls with t at the right edge
         const t1 = Math.max(W, S.t), t0 = t1 - W, tNow = Math.max(0, S.t);
         const L = 42, Rm = 10, T = 30, B = 30;
         const rowH = h - T - B, pw = w - L - Rm;
         const X = tt => L + (tt - t0)/(t1 - t0)*pw;
         const N = Math.max(240, Math.round(2*pw));
+        // too many fast turns in the window to draw (always so under the strobe): draw the band that the fast
+        // precession about B0 sweeps out. With Bloch vector b, field axis n and measurement axis m,
+        // b.m ranges over (b.n)(m.n) +- |b x n| |m x n|, so P(+-) = (1 +- b.m)/2 covers a band.
+        const band = realistic() || w0()*W/TAU > N/6;
+        const nA = toLab({ x: 0, y: 0, z: 1 }, eFrame()), mA = measAxis(), mn = mA.x*nA.x + mA.y*nA.y + mA.z*nA.z;
+        const mPerp = Math.sqrt(Math.max(0, 1 - mn*mn));
         const samples = [];
         for (let i = 0; i <= N; i++){
-            const tt = t0 + (tNow - t0)*i/N, st = state(tt);      // only the elapsed part, t0 ... now
+            const tt = t0 + (tNow - t0)*i/N, st = state(band ? strobe(tt) : tt);      // only the elapsed part, t0 ... now
             st.tt = tt; st.P = measProbs(st);
+            if (band){
+                const bv = toLab(blochVec(st), eFrame()), bn = bv.x*nA.x + bv.y*nA.y + bv.z*nA.z;
+                const bPerp = Math.sqrt(Math.max(0, bv.x*bv.x + bv.y*bv.y + bv.z*bv.z - bn*bn));
+                const lo = bn*mn - bPerp*mPerp, hi = bn*mn + bPerp*mPerp;
+                st.band = [[(1 + lo)/2, (1 + hi)/2], [(1 - hi)/2, (1 - lo)/2]];
+            }
             samples.push(st);
         }
         const mb = S.meas.pick;
-        const ser = [ { f: s => s.P[0], col: COL.pp, sg: '+' }, { f: s => s.P[1], col: COL.pm, sg: '−' } ];
+        const ser = [ { f: s => s.P[0], col: COL.pp, sg: '+', k: 0 }, { f: s => s.P[1], col: COL.pm, sg: '−', k: 1 } ];
         const tick = niceStep(W/6);
+        // long windows in ns read better in microseconds or milliseconds
+        const nsU = U() === UNITS.ueVns, sc = nsU && W > 2e6 ? 1e-6 : nsU && W > 2e3 ? 1e-3 : 1;
+        const tAxis = sc === 1 ? U().tAxis : sc === 1e-3 ? 't (μs)' : 't (ms)';
+        const tLab = v => sig(v*sc, 4);
         const cur = state(S.t); cur.P = measProbs(cur);
         const xc = X(S.t), y0 = T;
         const Y = v => y0 + (1 - v)*rowH;
@@ -1590,10 +1828,17 @@
             txt(ctx, fmt(v, v === 0 || v === 1 ? 0 : 2), L - 5, Y(v), COL.dim, 10.5, 'right', 'middle');
         }
         ctx.strokeStyle = COL.axis; ctx.lineWidth = 1; ctx.strokeRect(L, y0, pw, rowH);
+        if (band) ser.forEach((s, k) => {
+            ctx.fillStyle = s.col; ctx.globalAlpha = 0.35; ctx.beginPath();
+            samples.forEach((smp, i) => { const x = X(smp.tt), y = Y(smp.band[k][1]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+            for (let i = samples.length - 1; i >= 0; i--) ctx.lineTo(X(samples[i].tt), Y(samples[i].band[k][0]));
+            ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+        });
         for (const s of ser){
-            ctx.strokeStyle = s.col; ctx.lineWidth = 2.5;
+            ctx.strokeStyle = s.col; ctx.lineWidth = band ? 1.2 : 2.5;
             ctx.beginPath();
-            samples.forEach((smp, i) => { const x = X(smp.tt), y = Y(s.f(smp)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+            // (in a band, the middle of the band: sampling the fast wiggle itself would alias)
+            samples.forEach((smp, i) => { const x = X(smp.tt), y = Y(band ? (smp.band[s.k][0] + smp.band[s.k][1])/2 : s.f(smp)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
             ctx.stroke();
         }
         for (const s of ser){ ctx.fillStyle = s.col; ctx.beginPath(); ctx.arc(xc, Y(s.f(cur)), 4.5, 0, TAU); ctx.fill(); }
@@ -1609,15 +1854,15 @@
         // cursor and x axis
         line(ctx, xc, T - 2, xc, h - B + 2, 'rgba(248,250,252,0.75)', 1.4, [4, 3]);
         const yb = h - B;
-        for (let k = Math.ceil(t0/tick); k*tick <= t1; k++) txt(ctx, fmt(k*tick, Number.isInteger(tick) ? 0 : Number.isInteger(tick*10) ? 1 : 2), X(k*tick), yb + 13, COL.dim, 10.5, 'center', 'middle');
-        txt(ctx, U().tAxis, L + pw, yb + 25, COL.dim, 11, 'right', 'middle');
-        txt(ctx, 't = ' + fmt(S.t, 2) + U().t, L, yb + 25, COL.text, 12, 'left', 'middle', 800);
+        for (let k = Math.ceil(t0/tick); k*tick <= t1; k++) txt(ctx, tLab(k*tick), X(k*tick), yb + 13, COL.dim, 10.5, 'center', 'middle');
+        txt(ctx, tAxis + (band ? ' · band = fast precession' : ''), L + pw, yb + 25, COL.dim, 11, 'right', 'middle');
+        txt(ctx, 't = ' + fmtTime(S.t), L, yb + 25, COL.text, 12, 'left', 'middle', 800);
     }
 
     // ---------- energy level diagram ----------
     // level diagram: energy <-> vertical position (shared by drawing and dragging)
     function levelGeom(h){
-        const T = 8, B = 8, sy = SYS[S.system], pad = 0.04*(sy.max - sy.min), lo = sy.min - pad, hi = sy.max + pad;
+        const T = 8, B = 8, sy = Erange(), pad = 0.04*(sy.max - sy.min), lo = sy.min - pad, hi = sy.max + pad;
         return { T, B, Y: E => T + (hi - E)/(hi - lo)*(h - T - B),
                  E: y => hi - (y - T)/(h - T - B)*(hi - lo) };
     }
@@ -1647,6 +1892,15 @@
             arrow(ctx, xm, Y(S.E1) + (up ? -3 : 3), xm, Y(S.E2) + (up ? 3 : -3), COL.rel, 1.8, 7);
             arrow(ctx, xm, Y(S.E2) + (up ? 3 : -3), xm, Y(S.E1) + (up ? -3 : 3), COL.rel, 1.8, 7);
             txt(ctx, 'ħω₂₁', xm + 6, (Y(S.E1) + Y(S.E2))/2, COL.rel, 11.5, 'left', 'middle', 800);
+        }
+        // the drive's photon energy hbar*w, up from the lower level: it reaches the upper one on resonance
+        if (drvOn()){
+            const Elo = Math.min(S.E1, S.E2), yb = Y(Elo), yt = Y(Elo + U().hbar*S.drive.w), xw = xm - 34;
+            ctx.strokeStyle = '#f87171'; ctx.lineWidth = 1.8; ctx.beginPath();
+            const n = Math.max(2, Math.round(Math.abs(yb - yt)/5));
+            for (let i = 0; i <= n; i++){ const y = yb + (yt - yb)*i/n, x = xw + (i % 2 ? 3 : -3)*(i > 0 && i < n ? 1 : 0); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+            ctx.stroke(); head(ctx, xw, yb, xw, yt, '#f87171', 7);
+            txt(ctx, 'ħω', xw + 6, (yb + yt)/2, '#f87171', 11.5, 'left', 'middle', 800);
         }
     }
 
@@ -1688,7 +1942,7 @@
     function setText(id, s){ if (lastText[id] !== s){ lastText[id] = s; $(id).textContent = s; } }
     function updateLive(){
         const st = state(S.t), b = toLab(blochVec(st), eFrame()), T21 = period(w21());
-        setText('timeVal', 't = ' + fmt(S.t, 2) + U().t);
+        setText('timeVal', 't = ' + fmtTime(S.t));
         setText('timeNote', isFinite(T21) ? 't = ' + fmt(S.t/T21, 3) + ' T₂₁' : 'T₂₁ = ∞ (degenerate)');
         setText('roC1p', fmt(st.m1, 3) + ' e^(i·' + fmtPi(wrap(st.p1)) + ')');
         setText('roC2p', fmt(st.m2, 3) + ' e^(i·' + fmtPi(wrap(st.p2)) + ')');
@@ -1699,25 +1953,61 @@
         setText('roPp', fmt(Pm[0], 3) + ', ' + fmt(Pm[1], 3));
         if (isQ()){ relabelDOM($('timeNote')); relabelDOM(document.querySelector('.probe-panel')); }
     }
+    // labels and readouts of the field and drive controls
+    function updateFieldText(){
+        const pt = PT(), real = S.drv.range === 'real', byW = isSpin() && S.fieldIn === 'w', uw = ' ' + U().w;
+        const W0 = isSpin() ? 'ω₀' : 'ω<sub>q</sub>', wu = ' <span class="w-unit">(' + U().w + ')</span>';
+        const B0 = S.B0[S.particle];
+        $('B0Lbl').innerHTML = byW ? 'ω₀ = γB₀, Larmor frequency' + wu : 'B₀, static field';
+        $('B0Val').textContent = byW ? sig(pt.gamma*B0, 3) : fmtT(B0);
+        $('partNote').innerHTML = 'γ = ' + sig(pt.gamma, 4) + ' rad/ns/T = ' + (pt.gamma/TAU >= 1 ? sig(pt.gamma/TAU, 4) + ' GHz/T' : sig(pt.gamma/TAU*1e3, 4) + ' MHz/T') + ' · g = ' + pt.g +
+            '<br>μ is ' + (pt.sgn > 0 ? 'antiparallel' : 'parallel') + ' to the spin: |+⟩ along B₀ is the ' + (pt.sgn > 0 ? 'upper' : 'lower') + ' level';
+        $('hamSub').textContent = isSpin() ? 'Static field B₀' : 'Energy eigenstates & eigenvalues';
+        $('basisBtnTitle').textContent = isSpin() ? 'B₀ DIRECTION' : 'EIGENSTATES';
+        const W1 = drvW1(), a = drvAmp();
+        $('ampLbl').innerHTML = (isSpin() && !byW ? 'B₁, drive amplitude' : 'Ω' + (isSpin() ? ' = γB₁' : '') + ', drive strength' + wu) + (real ? ' · log scale' : '');
+        $('ampVal').textContent = isSpin() && !byW ? fmtT(a) : sig(W1, 3);
+        $('freqLbl').innerHTML = real ? 'Detuning (ω − ' + W0 + ')/Ω' : 'ω, drive frequency' + wu;
+        $('w0Lbl').innerHTML = W0; $('ratioLbl').innerHTML = 'Ω/' + W0; $('resonLbl').innerHTML = W0;
+        $('freqVal').textContent = real ? fmt(S.drv.det, 2) : sig(S.drive.w, 3);
+        $('w0Val').textContent = sig(w0(), 3);
+        $('ratioVal').textContent = w0() > 0 ? sig(W1/w0(), 2) : '∞';
+        const tau = tauFlip();
+        $('tauVal').textContent = isFinite(tau) ? (tau < 1e4 ? sig(tau, 3) + U().t : fmtTime(tau)) : '—';
+        const f = S.drive.w/TAU, fs = U() === UNITS.nat ? sig(f, 3) : f >= 1 ? sig(f, 4) + ' GHz' : sig(f*1e3, 4) + ' MHz';
+        $('drvNote').innerHTML = !drvOn() ? 'Drive off: H is time independent.'
+            : 'f = ω/2π = ' + fs + ' · ' + (real ? 'strobed every 2 drive periods; about ' + sig(w0()*tau/TAU, 2) + ' Larmor turns per flip'
+                                                : 'ω − ' + W0 + ' = ' + sig(S.drive.w - w0(), 3) + uw);
+        $('drvBtnLabel').innerHTML = !drvOn() ? 'OFF' : (isSpin() ? 'B₁ = ' + fmtT(a) : 'Ω = ' + sig(W1, 3)) + '<br>' + (real ? 'realistic' : 'ω = ' + sig(S.drive.w, 3));
+        $('addTauBtn').style.display = drvOn() ? '' : 'none';
+        $('addT1Btn').style.display = drvOn() ? 'none' : '';
+        $('addT2Btn').style.display = drvOn() ? 'none' : '';
+    }
     function updateStatic(){
+        document.body.classList.toggle('sys-spin', isSpin());
+        document.body.classList.toggle('sys-qubit', !isSpin());
         $('E1Val').textContent = fmt(S.E1, 2);
         $('E2Val').textContent = fmt(S.E2, 2);
-        $('w1Val').textContent = fmt(w1(), 2);
-        $('w2Val').textContent = fmt(w2(), 2);
-        $('w21Val').textContent = fmt(w21(), 2);
-        $('T1Val').textContent = fmt(period(w1()), 2);
-        $('T2Val').textContent = fmt(period(w2()), 2);
-        $('T21Val').textContent = fmt(period(w21()), 2);
+        $('w1Val').textContent = sig(w1(), 3);
+        $('w2Val').textContent = sig(w2(), 3);
+        $('w21Val').textContent = sig(w21(), 3);
+        $('T1Val').textContent = sig(period(w1()), 3);
+        $('T2Val').textContent = sig(period(w2()), 3);
+        $('T21Val').textContent = sig(period(w21()), 3);
+        updateFieldText();
         $('omegaUnits').textContent = 'ω in ' + U().w + ' · T in ' + U().tn;
-        document.querySelectorAll('.shiftAmt').forEach(el => { el.textContent = SYS[S.system].shift; });
+        document.querySelectorAll('.shiftAmt').forEach(el => { el.textContent = SYS.qubit.shift; });
         $('initConvNote').innerHTML = 'Written in the z basis, with the ' + ketH('+', 'z') + ' coefficient real and ≥ 0';
         $('basisNote').innerHTML = isQ() ? 'Which pair of qubit states are the energy eigenstates |E₁⟩ (energy E₁) and |E₂⟩ (energy E₂).'
-            : '|E₁⟩ = |+⟩<sub>n</sub> has energy E₁, |E₂⟩ = |−⟩<sub>n</sub> has energy E₂. For a spin, this is a magnetic field along n̂.';
+            : 'The direction n̂ of the static field B₀. Its energy eigenstates are |E₁⟩ = |+⟩<sub>n</sub> and |E₂⟩ = |−⟩<sub>n</sub>; for the ' +
+              PT().name + ' |+⟩<sub>n</sub> is the ' + (PT().sgn > 0 ? 'upper' : 'lower') + ' level. The drive B₁ is perpendicular to n̂.';
         speedText();
         document.querySelectorAll('.E-unit').forEach(el => { el.textContent = U().Eunit; });
         $('speedUnit').textContent = U().speed;
         $('hbarNote').textContent = U().hbarNote;
-        $('hamBtnLabel').innerHTML = ketH('+', S.basis.pick) + ': ' + fmt(S.E1, 2) + U().E + '<br>' + ketH('−', S.basis.pick) + ': ' + fmt(S.E2, 2) + U().E;
+        $('footEq').innerHTML = drvOn() ? 'H(t) = H<sub>0</sub> + drive: solved numerically' : 'c<sub>n</sub>(t) = c<sub>n</sub>(0) e<sup>&minus;iE<sub>n</sub>t/&hbar;</sup>';
+        $('hamBtnLabel').innerHTML = isSpin() ? PT().name + '<br>' + fmtT(S.B0[S.particle]) + ' ∥ ' + (S.basis.pick === 'n' ? 'n̂' : S.basis.pick)
+            : ketH('+', S.basis.pick) + ': ' + fmt(S.E1, 2) + U().E + '<br>' + ketH('−', S.basis.pick) + ': ' + fmt(S.E2, 2) + U().E;
         updateMatrix();
         $('addT1Btn').disabled = !isFinite(period(w1()));
         $('addT2Btn').disabled = !isFinite(period(w2()));
@@ -1727,9 +2017,11 @@
         $('initBtnLabel').innerHTML = stateLabel(S.init);
         const [c1, c2] = coeffs0(), sb = S.basis.pick;
         const cstr = c => Math.abs(c[1]) < 5e-4 ? fmt(c[0], 3) : '(' + fmtC(c[0], c[1]) + ')';
-        const ex = E => 'e<sup>\u2212i(' + fmt(E, 2) + U().E + ')t/\u0127</sup>';
-        $('psiEq').innerHTML = '|ψ(t)⟩ = <span class="t1">' + cstr(c1) + ' ' + ex(S.E1) + ' ' + ketH('+', sb) + '</span>' +
-            ' + <span class="t2">' + cstr(c2) + ' ' + ex(S.E2) + ' ' + ketH('−', sb) + '</span>';
+        const ex = E => 'e<sup>\u2212i(' + fmtE(E) + U().E + ')t/\u0127</sup>';
+        $('psiEq').innerHTML = drvOn()
+            ? '|ψ(t)⟩ = <span class="t1">c₁(t) ' + ketH('+', sb) + '</span> + <span class="t2">c₂(t) ' + ketH('−', sb) + '</span>, &nbsp;c₁(0) = ' + cstr(c1) + ', c₂(0) = ' + cstr(c2) + ' &nbsp;<small>(driven: |c₁|, |c₂| change)</small>'
+            : '|ψ(t)⟩ = <span class="t1">' + cstr(c1) + ' ' + ex(S.E1) + ' ' + ketH('+', sb) + '</span>' +
+              ' + <span class="t2">' + cstr(c2) + ' ' + ex(S.E2) + ' ' + ketH('−', sb) + '</span>';
         $('E1Ket').innerHTML = ketH('+', sb);
         $('E2Ket').innerHTML = ketH('−', sb);
         $('basisBtnLabel').innerHTML = pairH(sb);
@@ -1866,6 +2158,9 @@
             M.map(r => '<tr>' + r.map(z => '<td>' + fmtEntry(z) + '</td>').join('') + '</tr>').join('') +
             '</table></div><span class="mat-sub">' + (isQ() ? { z: 'Z', x: 'X', y: 'Y', n: 'θφ' }[S.matBasis] : S.matBasis) + '</span>';
         const k = S.matBasis;
+        $('matHNote').innerHTML = 'H₀ = E₁|E₁⟩⟨E₁| + E₂|E₂⟩⟨E₂|, written in the basis chosen below. ' + (drvOn()
+            ? 'The drive adds a time-dependent term: in the energy basis ⟨E₁|H(t)|E₂⟩ = ' + (isSpin() && PT().sgn < 0 ? '−' : '') + '(ħΩ/2) cos(ωt), with Ω = ' + (isSpin() ? 'γB₁ = ' : '') + sig(drvW1(), 3) + ' ' + U().w + '.'
+            : 'With the drive off, H = H₀ is time independent.');
         $('matrixNote').innerHTML = 'Rows and columns: ' + ketH('+', k) + ', ' + ketH('−', k) + ' · entries in ' + U().en;
     }
     $('matBasisGrid').addEventListener('click', e => {
@@ -1884,8 +2179,8 @@
 
     // ---------- controls ----------
     // changing an energy restarts the clock at t = 0, so the state shown is c(0) and the phases do not jump
-    $('E1Slider').addEventListener('input', e => { S.E1 = parseFloat(e.target.value); S.t = 0; updateStatic(); });
-    $('E2Slider').addEventListener('input', e => { S.E2 = parseFloat(e.target.value); S.t = 0; updateStatic(); });
+    $('E1Slider').addEventListener('input', e => { S.E1 = parseFloat(e.target.value); hChanged(); });
+    $('E2Slider').addEventListener('input', e => { S.E2 = parseFloat(e.target.value); hChanged(); });
     document.querySelectorAll('.step-btn[data-slider]').forEach(btn => btn.addEventListener('click', () => {
         const s = $(btn.dataset.slider), step = parseFloat(s.step), dir = parseInt(btn.dataset.dir, 10);
         s.value = clamp(parseFloat(s.value) + dir*step, parseFloat(s.min), parseFloat(s.max)).toFixed(4);
@@ -1912,6 +2207,12 @@
             return d1 < d2 ? 1 : 2;
         }
         function setFrom(e){
+            if (isSpin()){
+                const { y, h } = local(e), sl = $('B0Slider'), st = parseFloat(sl.step);
+                const B = 2*Math.abs(levelGeom(h).E(y))/(U().hbar*PT().gamma);
+                sl.value = clamp(Math.round(B/st)*st, 0, PT().B0max); sl.dispatchEvent(new Event('input'));
+                return;
+            }
             const { y, h } = local(e), sl = $(which === 1 ? 'E1Slider' : 'E2Slider');
             const st = parseFloat(sl.step), E = clamp(Math.round(levelGeom(h).E(y)/st)*st, parseFloat(sl.min), parseFloat(sl.max));
             sl.value = E.toFixed(2); sl.dispatchEvent(new Event('input'));
@@ -1927,18 +2228,59 @@
     })();
 
     // switching units keeps the energy numbers and restarts the clock
-    modeSelector('unitsSel', 'units', u => { S.unitMode = u; S.t = 0; updateStatic(); });
+    modeSelector('unitsSel', 'units', u => {
+        const h0 = U().hbar; S.unitMode = u; const f = h0/U().hbar, a = S.drv.amp.q;
+        S.drv.w.q *= f; a.ill *= f; a.real *= f;
+        hChanged();
+    });
     // switching systems: relabel, change units, and swap in that system's energies and slider range
+    // slider ranges and positions for the current system, particle and drive range
     function applySystemRanges(){
-        const sy = SYS[S.system];
+        const sy = SYS.qubit, pt = PT(), real = S.drv.range === 'real', d = S.drv;
         for (const id of ['E1Slider', 'E2Slider']){ const s = $(id); s.min = sy.min; s.max = sy.max; s.step = sy.step; }
         $('E1Slider').value = S.E1; $('E2Slider').value = S.E2;
+        const b0 = $('B0Slider'); b0.max = pt.B0max; b0.step = pt.B0step; b0.value = S.B0[S.particle];
+        // drive strength: linear in the illustrative range, log10 in the realistic one
+        const am = $('ampSlider');
+        if (real){ am.min = isSpin() ? -6 : -3; am.max = isSpin() ? -3 : 0; am.step = 0.01; am.value = Math.log10(drvAmp()); }
+        else { am.min = 0; am.max = isSpin() ? pt.B1max : 38; am.step = isSpin() ? pt.B1step : 0.05; am.value = drvAmp(); }
+        // drive frequency: w itself (illustrative), or the detuning in units of w1 (realistic)
+        const fq = $('freqSlider');
+        if (real){ fq.min = -3; fq.max = 3; fq.step = 0.05; fq.value = d.det; }
+        else {
+            const wmax = isSpin() ? 1.25*pt.gamma*pt.B0max : 1.25*(sy.max - sy.min)/U().hbar;
+            fq.min = 0; fq.max = wmax; fq.step = isSpin() ? pt.wStep : 0.02; fq.value = d.w[dKey()];
+        }
     }
+    // any change to the Hamiltonian restarts the clock
+    function hChanged(){ applyField(); S.t = 0; applySystemRanges(); updateStatic(); }
     modeSelector('systemSel', 'system', sys => {
         if (sys === S.system) return;
-        S.Esaved[S.system] = { E1: S.E1, E2: S.E2 };
-        S.system = sys; S.E1 = S.Esaved[sys].E1; S.E2 = S.Esaved[sys].E2; S.t = 0;
-        applySystemRanges(); updateStatic();
+        if (sys === 'spin') S.Esaved.qubit = { E1: S.E1, E2: S.E2 };
+        S.system = sys;
+        if (sys === 'qubit'){ S.E1 = S.Esaved.qubit.E1; S.E2 = S.Esaved.qubit.E2; }
+        hChanged();
+    });
+    modeSelector('particleSel', 'particle', pk => { S.particle = pk; hChanged(); });
+    modeSelector('fieldInSel', 'fieldin', f => { S.fieldIn = f; updateStatic(); });
+    modeSelector('drvOnSel', 'on', v => { S.drv.on = v === '1'; hChanged(); });
+    modeSelector('drvRangeSel', 'range', r => { S.drv.range = r; hChanged(); });
+    $('B0Slider').addEventListener('input', e => { S.B0[S.particle] = parseFloat(e.target.value); hChanged(); });
+    $('ampSlider').addEventListener('input', e => {
+        const v = parseFloat(e.target.value);
+        S.drv.amp[dKey()][S.drv.range] = S.drv.range === 'real' ? Math.pow(10, v) : v; hChanged();
+    });
+    $('freqSlider').addEventListener('input', e => {
+        const v = parseFloat(e.target.value);
+        if (S.drv.range === 'real') S.drv.det = v; else S.drv.w[dKey()] = v;
+        hChanged();
+    });
+    $('resonBtn').addEventListener('click', () => { S.drv.det = 0; S.drv.w[dKey()] = w0(); hChanged(); });
+    $('drvToggleBtn').addEventListener('click', () => {
+        const open = $('drvBody').style.display === 'none';
+        $('drvBody').style.display = open ? '' : 'none';
+        $('drvChevron').innerHTML = open ? '&#9662;' : '&#9656;';
+        $('drvToggleBtn').setAttribute('aria-expanded', String(open));
     });
 
     // Hamiltonian panel expands in place
@@ -1979,12 +2321,13 @@
     $('addT1Btn').addEventListener('click', () => { setPlaying(false); S.t += period(w1()); });
     $('addT2Btn').addEventListener('click', () => { setPlaying(false); S.t += period(w2()); });
     $('addT21Btn').addEventListener('click', () => { setPlaying(false); S.t += period(w21()); });
+    $('addTauBtn').addEventListener('click', () => { setPlaying(false); S.t += tauFlip(); });
     function speedText(){ const v = speedEff(); $('speedVal').textContent = v < 0.1 ? v.toFixed(3) : v.toFixed(1); }
     $('speedSlider').addEventListener('input', e => { S.speedV = parseFloat(e.target.value); speedText(); });
     function shiftE(d){
-        const sy = SYS[S.system]; d *= sy.shift;
+        const sy = SYS.qubit; d *= sy.shift;
         if (Math.min(S.E1, S.E2) + d < sy.min || Math.max(S.E1, S.E2) + d > sy.max) return;
-        S.E1 = Math.round((S.E1 + d)*100)/100; S.E2 = Math.round((S.E2 + d)*100)/100; S.t = 0; syncInputs();
+        S.E1 = Math.round((S.E1 + d)*100)/100; S.E2 = Math.round((S.E2 + d)*100)/100; hChanged();
     }
     $('shiftUpBtn').addEventListener('click', () => shiftE(1));
     $('shiftDownBtn').addEventListener('click', () => shiftE(-1));
@@ -2156,7 +2499,10 @@
 
     // ---------- init ----------
     initMarkerboard();
-    syncInputs();
+    // every drive starts tuned to resonance at its default field
+    for (const k in PART) S.drv.w[k] = PART[k].gamma*S.B0[k];
+    S.drv.w.q = Math.abs(S.Esaved.qubit.E2 - S.Esaved.qubit.E1)/UNITS.ueVns.hbar;
+    hChanged();
     requestAnimationFrame(frame);
 })();
 </script>
