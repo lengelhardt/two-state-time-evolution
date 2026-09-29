@@ -574,8 +574,12 @@
     #fsBtn.fs-pulse { animation:fsPulse 1.6s ease-in-out 5; }
     @media (prefers-reduced-motion: reduce) { #fsBtn.fs-pulse { animation:none; } }
     .inline-sel { display:flex; align-items:center; gap:8px; }
-    body.sys-qubit .spin-only, body.sys-spin .qubit-only { display:none !important; }
+    /* B-FIELD mode (spin only): its controls show only in that mode; the energy controls hide in it */
+    body.sys-qubit .spin-only, body.sys-spin .qubit-only, body:not(.b-mode) .b-only, body.b-mode .nob-only { display:none !important; }
     #particleSel .mode-opt { font-size:11.5px; }
+    #hModeSel .mode-opt { flex-direction:column; justify-content:center; line-height:1.15; font-size:12px; }
+    #hModeSel .mode-opt small { font-size:10.5px; letter-spacing:0; text-transform:none; opacity:0.85; }
+    .psi-eq .t1, .psi-eq .t2 { white-space:nowrap; }
     .inline-sel .inline-lbl { flex:0 0 54px; font-family:'Exo 2',sans-serif; font-size:13px; font-weight:800; color:var(--ink); }
     .inline-sel .mode-selector { flex:1; height:34px; }
     .inline-sel .mode-opt { font-size:12px; }
@@ -675,6 +679,7 @@
     <div class="left-panel">
         <div class="control-group">
             <button class="btn-primary fs-pulse" id="fsBtn">&#x26F6; SET TO FULL SCREEN</button>
+            <button class="btn-secondary" id="resetAllBtn" style="width:100%; margin-top:6px;" title="Put every setting back to its default (keeps full screen, the presentation tools, and SPIN ½ / QUBIT)">&#8634; RESET TO DEFAULTS</button>
             <div class="inline-sel" style="margin:6px 0;"><span class="inline-lbl">System</span>
                 <div class="mode-selector" id="systemSel" title="Which two-state system the labels describe">
                     <button class="mode-opt selected" data-system="spin">SPIN &frac12;</button>
@@ -690,74 +695,15 @@
 
         <div class="control-group">
             <button class="btn-secondary state-open-btn" id="hamToggleBtn" aria-expanded="false" aria-controls="hamBody" title="Show or hide the Hamiltonian settings">
-                <span class="sob-title">&#9889; DEFINE HAMILTONIAN<br><span class="sob-sub" id="hamSub">Static field B&#8320;</span></span>
+                <span class="sob-title">&#9889; DEFINE HAMILTONIAN<br><span class="sob-sub" id="hamSub">Energy eigenstates &amp; eigenvalues</span></span>
                 <span class="sob-val ham-sum" id="hamBtnLabel">&mdash;</span><span class="sob-edit" id="hamChevron">&#9656;</span>
             </button>
             <div id="hamBody" style="display:none;">
-            <div class="spin-only" style="margin:6px 0 4px;">
-                <div class="mode-selector" id="particleSel" title="Which particle's magnetic moment">
-                    <button class="mode-opt selected" data-particle="e">ELECTRON</button>
-                    <button class="mode-opt" data-particle="p">PROTON</button>
-                    <button class="mode-opt" data-particle="n">NEUTRON</button>
-                </div>
-                <div class="inline-sel" style="margin-top:6px;"><span class="inline-lbl">Set by</span>
-                <div class="mode-selector" id="fieldInSel" title="Set the Hamiltonian by magnetic field or by angular frequency">
-                    <button class="mode-opt selected" data-fieldin="B">FIELD B (T)</button>
-                    <button class="mode-opt" data-fieldin="w">&omega; = &gamma;B</button>
-                </div></div>
-                <div class="auto-note" id="partNote" style="text-align:center;">&mdash;</div>
+            <div class="mode-selector spin-only" id="hModeSel" style="margin-top:6px; height:44px;" title="Define H by its energies (time independent), or by a magnetic field, which can oscillate (time dependent)">
+                <button class="mode-opt selected" data-hmode="E">ENERGIES<small>static H</small></button>
+                <button class="mode-opt" data-hmode="B">MAGNETIC FIELD<small>H can be dynamic</small></button>
             </div>
-            <div class="button-row" style="margin:4px 0 6px;">
-                <button class="btn-secondary ham-btn" id="basisOpenBtn" title="Choose the energy eigenstates (default |+⟩z, |−⟩z)" aria-haspopup="dialog"><span class="mat-lbl2" style="text-align:center;"><span id="basisBtnTitle">EIGENSTATES</span><br><span style="white-space:nowrap; font-size:14px;"><span id="basisBtnLabel">|&plusmn;&#10217;<sub>z</sub></span> &#9998;</span></span></button>
-                <button class="btn-secondary ham-btn" id="matrixOpenBtn" title="Show the Hamiltonian as a 2&times;2 matrix" aria-haspopup="dialog"><span class="grid-ico" aria-hidden="true"><i></i><i></i><i></i><i></i></span> <span class="mat-lbl2">MATRIX<br><small>REPRESENTATION</small></span></button>
-            </div>
-            <div class="slider-control spin-only">
-                <label id="B0Lbl">B&#8320;</label>
-                <div class="slider-row">
-                    <button class="step-btn" data-slider="B0Slider" data-dir="-1" aria-label="Decrease B0">&#9664;</button>
-                    <input type="range" id="B0Slider" min="0" max="1" step="0.001" value="0.35">
-                    <button class="step-btn" data-slider="B0Slider" data-dir="1" aria-label="Increase B0">&#9654;</button>
-                    <div class="digital-display" id="B0Val">&mdash;</div>
-                </div>
-            </div>
-            <div class="qubit-only">
-            <div class="slider-control">
-                <label>E&#8321; = energy of <span id="E1Ket">|+&#10217;<sub>z</sub></span> <span class="E-unit">(eV)</span></label>
-                <div class="slider-row">
-                    <button class="step-btn" data-slider="E1Slider" data-dir="-1" aria-label="Decrease E1">&#9664;</button>
-                    <input type="range" id="E1Slider" min="-3" max="5" step="0.05" value="1">
-                    <button class="step-btn" data-slider="E1Slider" data-dir="1" aria-label="Increase E1">&#9654;</button>
-                    <div class="digital-display" id="E1Val">1.00</div>
-                </div>
-            </div>
-            <div class="slider-control" style="margin-top:4px;">
-                <label>E&#8322; = energy of <span id="E2Ket">|&minus;&#10217;<sub>z</sub></span> <span class="E-unit">(eV)</span></label>
-                <div class="slider-row">
-                    <button class="step-btn" data-slider="E2Slider" data-dir="-1" aria-label="Decrease E2">&#9664;</button>
-                    <input type="range" id="E2Slider" min="-3" max="5" step="0.05" value="2.5">
-                    <button class="step-btn" data-slider="E2Slider" data-dir="1" aria-label="Increase E2">&#9654;</button>
-                    <div class="digital-display" id="E2Val">2.50</div>
-                </div>
-            </div>
-            </div>
-            <canvas id="levelCanvas" role="img" aria-label="Energy level diagram showing E1, E2 and the gap between them; drag a line to change its energy"></canvas>
-            <div class="omega-grid">
-                <div class="og"><span class="ol">&omega;&#8321; = E&#8321;/&hbar;</span><span class="ov" id="w1Val">&mdash;</span></div>
-                <div class="og"><span class="ol">&omega;&#8322; = E&#8322;/&hbar;</span><span class="ov" id="w2Val">&mdash;</span></div>
-                <div class="og"><span class="ol">&omega;&#8322;&#8321;</span><span class="ov" id="w21Val">&mdash;</span></div>
-                <div class="og"><span class="ol">T&#8321; = 2&pi;/|&omega;&#8321;|</span><span class="ov" id="T1Val">&mdash;</span></div>
-                <div class="og"><span class="ol">T&#8322;</span><span class="ov" id="T2Val">&mdash;</span></div>
-                <div class="og"><span class="ol">T&#8322;&#8321;</span><span class="ov" id="T21Val">&mdash;</span></div>
-            </div>
-            <div class="auto-note" id="omegaUnits" style="text-align:center;">&mdash;</div>
-            <div class="button-row qubit-only" style="margin-top:8px;">
-                <button class="btn-secondary" id="shiftDownBtn" title="Lower both energies: the relative phase is unchanged">BOTH E &minus; <span class="shiftAmt">1</span></button>
-                <button class="btn-secondary" id="shiftUpBtn" title="Raise both energies: the relative phase is unchanged">BOTH E + <span class="shiftAmt">1</span></button>
-            </div>
-            </div>
-        </div>
-
-        <div class="control-group">
+            <div class="b-only" id="drvGroup" style="margin-top:6px;">
             <button class="btn-secondary state-open-btn" id="drvToggleBtn" aria-expanded="false" aria-controls="drvBody" title="Show or hide the oscillating drive">
                 <span class="sob-title">&#12336; OSCILLATING DRIVE<br><span class="sob-sub" id="drvSub">B&#8321;cos(&omega;t) &perp; B&#8320;</span></span>
                 <span class="sob-val ham-sum" id="drvBtnLabel">OFF</span><span class="sob-edit" id="drvChevron">&#9656;</span>
@@ -801,6 +747,69 @@
                 </div>
                 <div class="auto-note" id="drvNote" style="text-align:center;">&mdash;</div>
             </div>
+            </div>
+            <div class="auto-note qubit-only" style="margin:6px 0 0; text-align:center;">Time-independent Hamiltonian</div>
+            <div class="b-only" style="margin:6px 0 4px;">
+                <div class="mode-selector" id="particleSel" title="Which particle's magnetic moment">
+                    <button class="mode-opt selected" data-particle="e">ELECTRON</button>
+                    <button class="mode-opt" data-particle="p">PROTON</button>
+                    <button class="mode-opt" data-particle="n">NEUTRON</button>
+                </div>
+                <div class="inline-sel" style="margin-top:6px;"><span class="inline-lbl">Set by</span>
+                <div class="mode-selector" id="fieldInSel" title="Set the Hamiltonian by magnetic field or by angular frequency">
+                    <button class="mode-opt selected" data-fieldin="B">FIELD B (T)</button>
+                    <button class="mode-opt" data-fieldin="w">&omega; = &gamma;B</button>
+                </div></div>
+                <div class="auto-note" id="partNote" style="text-align:center;">&mdash;</div>
+            </div>
+            <div class="button-row" style="margin:4px 0 6px;">
+                <button class="btn-secondary ham-btn" id="basisOpenBtn" title="Choose the energy eigenstates (default |+⟩z, |−⟩z)" aria-haspopup="dialog"><span class="mat-lbl2" style="text-align:center;"><span id="basisBtnTitle">EIGENSTATES</span><br><span style="white-space:nowrap; font-size:14px;"><span id="basisBtnLabel">|&plusmn;&#10217;<sub>z</sub></span> &#9998;</span></span></button>
+                <button class="btn-secondary ham-btn" id="matrixOpenBtn" title="Show the Hamiltonian as a 2&times;2 matrix" aria-haspopup="dialog"><span class="grid-ico" aria-hidden="true"><i></i><i></i><i></i><i></i></span> <span class="mat-lbl2">MATRIX<br><small>REPRESENTATION</small></span></button>
+            </div>
+            <div class="slider-control b-only">
+                <label id="B0Lbl">B&#8320;</label>
+                <div class="slider-row">
+                    <button class="step-btn" data-slider="B0Slider" data-dir="-1" aria-label="Decrease B0">&#9664;</button>
+                    <input type="range" id="B0Slider" min="0" max="1" step="0.001" value="0.35">
+                    <button class="step-btn" data-slider="B0Slider" data-dir="1" aria-label="Increase B0">&#9654;</button>
+                    <div class="digital-display" id="B0Val">&mdash;</div>
+                </div>
+            </div>
+            <div class="nob-only">
+            <div class="slider-control">
+                <label>E&#8321; = energy of <span id="E1Ket">|+&#10217;<sub>z</sub></span> <span class="E-unit">(eV)</span></label>
+                <div class="slider-row">
+                    <button class="step-btn" data-slider="E1Slider" data-dir="-1" aria-label="Decrease E1">&#9664;</button>
+                    <input type="range" id="E1Slider" min="-3" max="5" step="0.05" value="1">
+                    <button class="step-btn" data-slider="E1Slider" data-dir="1" aria-label="Increase E1">&#9654;</button>
+                    <div class="digital-display" id="E1Val">1.00</div>
+                </div>
+            </div>
+            <div class="slider-control" style="margin-top:4px;">
+                <label>E&#8322; = energy of <span id="E2Ket">|&minus;&#10217;<sub>z</sub></span> <span class="E-unit">(eV)</span></label>
+                <div class="slider-row">
+                    <button class="step-btn" data-slider="E2Slider" data-dir="-1" aria-label="Decrease E2">&#9664;</button>
+                    <input type="range" id="E2Slider" min="-3" max="5" step="0.05" value="2.5">
+                    <button class="step-btn" data-slider="E2Slider" data-dir="1" aria-label="Increase E2">&#9654;</button>
+                    <div class="digital-display" id="E2Val">2.50</div>
+                </div>
+            </div>
+            </div>
+            <canvas id="levelCanvas" role="img" aria-label="Energy level diagram showing E1, E2 and the gap between them; drag a line to change its energy"></canvas>
+            <div class="omega-grid">
+                <div class="og"><span class="ol">&omega;&#8321; = E&#8321;/&hbar;</span><span class="ov" id="w1Val">&mdash;</span></div>
+                <div class="og"><span class="ol">&omega;&#8322; = E&#8322;/&hbar;</span><span class="ov" id="w2Val">&mdash;</span></div>
+                <div class="og"><span class="ol">&omega;&#8322;&#8321;</span><span class="ov" id="w21Val">&mdash;</span></div>
+                <div class="og"><span class="ol">T&#8321; = 2&pi;/|&omega;&#8321;|</span><span class="ov" id="T1Val">&mdash;</span></div>
+                <div class="og"><span class="ol">T&#8322;</span><span class="ov" id="T2Val">&mdash;</span></div>
+                <div class="og"><span class="ol">T&#8322;&#8321;</span><span class="ov" id="T21Val">&mdash;</span></div>
+            </div>
+            <div class="auto-note" id="omegaUnits" style="text-align:center;">&mdash;</div>
+            <div class="button-row nob-only" style="margin-top:8px;">
+                <button class="btn-secondary" id="shiftDownBtn" title="Lower both energies: the relative phase is unchanged">BOTH E &minus; <span class="shiftAmt">1</span></button>
+                <button class="btn-secondary" id="shiftUpBtn" title="Raise both energies: the relative phase is unchanged">BOTH E + <span class="shiftAmt">1</span></button>
+            </div>
+            </div>
         </div>
 
         <div class="control-group">
@@ -830,12 +839,12 @@
             <div class="psi-eq" id="psiEq" role="button" tabindex="0" title="Energy eigenstates: |+⟩z has energy E₁, |−⟩z has energy E₂. Click to set the initial state."></div>
             <div class="mode-selector" id="layoutSel" title="Number of views">
                 <button class="mode-opt" data-layout="1">1 VIEW</button>
-                <button class="mode-opt" data-layout="2">2</button>
-                <button class="mode-opt selected" data-layout="4">4</button>
+                <button class="mode-opt selected" data-layout="2">2</button>
+                <button class="mode-opt" data-layout="4">4</button>
             </div>
         </div>
         <div class="degen-banner" id="degenBanner" hidden>E&#8321; = E&#8322; (degenerate): both coefficients rotate together, so the relative phase never changes.</div>
-        <div id="viewGrid" class="layout-4">
+        <div id="viewGrid" class="layout-2">
             <div class="view-pane"><div class="pane-head"><select class="view-select" aria-label="View shown in pane 1"></select><button class="zoom-btn" data-zoom="-1" title="Zoom out: longer time window (all plots)">&minus;</button><button class="zoom-btn" data-zoom="1" title="Zoom in: shorter time window (all plots)">+</button></div><canvas class="view-canvas" role="img" aria-label="Simulation view 1"></canvas></div>
             <div class="view-pane"><div class="pane-head"><select class="view-select" aria-label="View shown in pane 2"></select><button class="zoom-btn" data-zoom="-1" title="Zoom out: longer time window (all plots)">&minus;</button><button class="zoom-btn" data-zoom="1" title="Zoom in: shorter time window (all plots)">+</button></div><canvas class="view-canvas" role="img" aria-label="Simulation view 2"></canvas></div>
             <div class="view-pane"><div class="pane-head"><select class="view-select" aria-label="View shown in pane 3"></select><button class="zoom-btn" data-zoom="-1" title="Zoom out: longer time window (all plots)">&minus;</button><button class="zoom-btn" data-zoom="1" title="Zoom in: shorter time window (all plots)">+</button></div><canvas class="view-canvas" role="img" aria-label="Simulation view 3"></canvas></div>
@@ -876,23 +885,6 @@
         </div>
 
         <div class="control-group">
-            <div class="panel-title" style="font-size:16px;">&#128065; DISPLAY OPTIONS</div>
-            <div class="button-row">
-                <button class="btn-secondary active-on" id="trailsBtn">TRAILS</button>
-                <button class="btn-secondary active-on" id="arcsBtn">PHASE ARCS</button>
-            </div>
-            <div class="button-row" style="margin-top:6px;">
-                <button class="btn-secondary active-on" id="omegaBtn">&omega; ARROWS</button>
-                <button class="btn-secondary" id="projBtn">PROJECTIONS</button>
-            </div>
-            <div class="inline-sel qubit-only" style="margin-top:8px;"><span class="inline-lbl">Units</span>
-                <div class="mode-selector" id="unitsSel" title="Units for energy and time">
-                    <button class="mode-opt selected" data-units="phys">PHYSICAL UNITS</button>
-                    <button class="mode-opt" data-units="nat">&hbar; = 1</button>
-                </div></div>
-        </div>
-
-        <div class="control-group">
             <div class="panel-title" style="font-size:16px; color:#0a5c3a;">&#128202; LIVE READOUTS</div>
             <div class="probe-panel">
                 <table class="ro-table">
@@ -904,6 +896,23 @@
                     <tr><td id="roPpLbl">P(+), P(&minus;)</td><td id="roPp">&mdash;</td></tr>
                 </table>
             </div>
+        </div>
+
+        <div class="control-group">
+            <div class="panel-title" style="font-size:16px;">&#128065; DISPLAY OPTIONS</div>
+            <div class="button-row">
+                <button class="btn-secondary active-on" id="trailsBtn">TRAILS</button>
+                <button class="btn-secondary active-on" id="arcsBtn">PHASE ARCS</button>
+            </div>
+            <div class="button-row" style="margin-top:6px;">
+                <button class="btn-secondary active-on" id="omegaBtn">&omega; ARROWS</button>
+                <button class="btn-secondary" id="projBtn">PROJECTIONS</button>
+            </div>
+            <div class="inline-sel nob-only" style="margin-top:8px;"><span class="inline-lbl">Units</span>
+                <div class="mode-selector" id="unitsSel" title="Units for energy and time">
+                    <button class="mode-opt selected" data-units="phys">PHYSICAL UNITS</button>
+                    <button class="mode-opt" data-units="nat">&hbar; = 1</button>
+                </div></div>
         </div>
 
     </div>
@@ -982,12 +991,12 @@
             <h1 style="color:#2C3E50; text-align:center; margin-top:0;">Two-State Time Evolution</h1>
             <p style="text-align:center; color:#666; font-style:italic;">two_state_time_evolution &nbsp;|&nbsp; v1.1 &nbsp;|&nbsp; Sep 29, 2026</p>
             <p style="text-align:center;">Phase, angular frequency and relative phase for a quantum system with two non-degenerate energy eigenstates.</p>
-            <p style="text-align:center;">With the drive off, the Hamiltonian is <strong>time independent</strong>: H, its eigenstates and its eigenvalues stay fixed while the state evolves. The <strong>OSCILLATING DRIVE</strong> adds a field B&#8321;cos(&omega;t) and makes H time dependent: this is <strong>magnetic resonance</strong> (section 7).</p>
+            <p style="text-align:center;"><strong>This version assumes a time-independent Hamiltonian:</strong> H, its eigenstates and its eigenvalues stay fixed while the state evolves.</p>
 
             <h2>QUICK START</h2>
             <ol>
                 <li>Choose the <strong>initial state</strong> |&psi;(0)&#10217;: one of the six spin states |&plusmn;&#10217;<sub>z</sub>, |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub>, a direction (&theta;, &phi;), or |c&#8322;| and &phi;&#8322; directly.</li>
-                <li>Choose the particle and the static field B&#8320; (for a qubit, the energies directly).</li>
+                <li>Choose the energies E&#8321; and E&#8322;.</li>
                 <li>Choose the <strong>measurement basis</strong> |&plusmn;&#10217;: the plot shows P(+) and P(&minus;), the probabilities of the two outcomes.</li>
                 <li>Press <strong>&#9654; PLAY</strong>. Watch each coefficient rotate in the complex plane at its own angular frequency.</li>
                 <li>Compare with the <strong>Relative phase</strong> view: in a frame that rotates with c&#8321;, only c&#8322; moves, and it moves at &omega;&#8322;&#8321; = (E&#8322; &minus; E&#8321;)/&hbar;.</li>
@@ -1003,14 +1012,13 @@
                 <tr><td>|+&#10217;<sub>y</sub>, |&minus;&#10217;<sub>y</sub></td><td>|+i&#10217;, |&minus;i&#10217;</td></tr>
                 <tr><td>|+&#10217;<sub>n</sub>, |&minus;&#10217;<sub>n</sub></td><td>|&theta;,&phi;&#10217; = cos(&theta;/2)|0&#10217; + e<sup>i&phi;</sup>sin(&theta;/2)|1&#10217;, and its orthogonal partner |&theta;,&phi;&#10217;<sup>&perp;</sup></td></tr>
                 <tr><td>c&#8321;, c&#8322;, E&#8321;, E&#8322;, &omega;&#8322;&#8321;, T&#8322;&#8321;</td><td>c&#8320;, c&#8321;, E&#8320;, E&#8321;, &omega;&#8321;&#8320;, T&#8321;&#8320;</td></tr>
-                <tr><td>H set by a magnetic field B&#8320; (electron, proton or neutron); &mu;eV and ns</td><td>H set by the energies directly, E from &minus;25 to 25 &mu;eV; &mu;eV and ns, or &hbar; = 1</td></tr>
+                <tr><td>eV and fs; E from &minus;3 to 5 eV</td><td>&mu;eV and ns; E from &minus;25 to 25 &mu;eV</td></tr>
             </table>
             <p>The qubit defaults are E&#8320; = &minus;10.35 &mu;eV and E&#8321; = +10.35 &mu;eV, i.e. H = &minus;(&hbar;&omega;<sub>q</sub>/2)&sigma;<sub>z</sub> with a 5 GHz splitting (20.7 &mu;eV, period 0.2 ns), typical of a superconducting qubit. Each system remembers its own energies when you switch.</p>
 
             <h2>THE PHYSICS</h2>
             <h3>1. Stationary states and their phases</h3>
-            <p><strong>Assumption (sections 1&ndash;6):</strong> the Hamiltonian is time independent, i.e. the drive is off. That is what makes the energy eigenstates stationary states and gives each coefficient the simple phase factor e<sup>&minus;iE<sub>n</sub>t/&hbar;</sup>. Changing B&#8320;, the energies or the eigenstates is not a time-dependent H: it defines a new H and restarts the clock at t = 0. Section 7 drops the assumption.</p>
-            <p><strong>A spin in a field B&#8320;</strong> along n&#770; has H = &minus;&mu;&middot;B&#8320; with &mu; = &gamma;S (proton) or &mu; = &minus;&gamma;S (electron, neutron), so E = &plusmn;&hbar;&omega;&#8320;/2 with the <strong>Larmor frequency</strong> &omega;&#8320; = &gamma;B&#8320;. For the electron and neutron |+&#10217;<sub>n</sub> is the upper level; for the proton it is the lower one, so its phasors and its precession turn the other way. The energies are symmetric about zero, so &omega;&#8322;&#8321; = &mp;&omega;&#8320;.</p>
+            <p><strong>Assumption:</strong> the Hamiltonian is time independent. That is what makes the energy eigenstates stationary states and gives each coefficient the simple phase factor e<sup>&minus;iE<sub>n</sub>t/&hbar;</sup>. Changing E&#8321;, E&#8322; or the eigenstates is not a time-dependent H: it defines a new H and restarts the clock at t = 0.</p>
             <p>By default the energy eigenstates are |E&#8321;&#10217; = |+&#10217;<sub>z</sub> with energy E&#8321; and |E&#8322;&#10217; = |&minus;&#10217;<sub>z</sub> with energy E&#8322; (a spin in a magnetic field along z). The small <strong>|&plusmn;&#10217;<sub>z</sub> &#9998;</strong> button in the ENERGIES panel changes them to |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub>, or |&plusmn;&#10217;<sub>n</sub> for any direction n&#770; = (&theta;, &phi;). Writing |1&#10217; = |E&#8321;&#10217; and |2&#10217; = |E&#8322;&#10217;, the Schr&ouml;dinger equation gives</p>
             <div class="formula">|&psi;(t)&#10217; = c&#8321;(0) e<sup>&minus;iE&#8321;t/&hbar;</sup> |1&#10217; + c&#8322;(0) e<sup>&minus;iE&#8322;t/&hbar;</sup> |2&#10217;</div>
             <p>Each coefficient keeps its magnitude and only its phase changes. Writing c<sub>n</sub>(t) = |c<sub>n</sub>| e<sup>i&phi;<sub>n</sub>(t)</sup>,</p>
@@ -1036,7 +1044,7 @@
             <p>Multiplying the whole state by one overall phase e<sup>i&alpha;</sup> changes nothing measurable. Factor out c&#8321;'s phase:</p>
             <div class="formula">|&psi;(t)&#10217; = e<sup>i&phi;&#8321;(t)</sup> [ |c&#8321;| |1&#10217; + |c&#8322;| e<sup>i&Delta;&phi;(t)</sup> |2&#10217; ],&nbsp;&nbsp;&nbsp; &Delta;&phi;(t) = &Delta;&phi;(0) &minus; &omega;&#8322;&#8321; t</div>
             <div class="formula">&omega;&#8322;&#8321; = (E&#8322; &minus; E&#8321;)/&hbar;,&nbsp;&nbsp;&nbsp; T&#8322;&#8321; = 2&pi;/|&omega;&#8322;&#8321;|</div>
-            <p>Only the <strong>relative phase</strong> &Delta;&phi; is physical, and it evolves at the difference frequency. The <strong>Relative phase</strong> view shows this in a frame that rotates with c&#8321;: c&#8321; stands still and c&#8322; turns at &omega;&#8322;&#8321;. In <strong>QUBIT</strong> mode, try <strong>BOTH E + 5</strong>: both arrows speed up, but &Delta;&phi; and every measurable quantity are unchanged. Adding a constant to the Hamiltonian is unobservable.</p>
+            <p>Only the <strong>relative phase</strong> &Delta;&phi; is physical, and it evolves at the difference frequency. The <strong>Relative phase</strong> view shows this in a frame that rotates with c&#8321;: c&#8321; stands still and c&#8322; turns at &omega;&#8322;&#8321;. Try <strong>BOTH E + 1</strong>: both arrows speed up, but &Delta;&phi; and every measurable quantity are unchanged. Adding a constant to the Hamiltonian is unobservable.</p>
 
             <h3>5. What does oscillate: measurement probabilities</h3>
             <p>Choose a measurement basis |&plusmn;&#10217; (|&plusmn;&#10217;<sub>z</sub>, |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub> or |&plusmn;&#10217;<sub>n</sub>). The probabilities of the two outcomes are</p>
@@ -1048,28 +1056,21 @@
             <h3>6. The Bloch sphere</h3>
             <p>With the convention above, cos(&theta;/2) = |c&#8321;|, sin(&theta;/2) = |c&#8322;|, and the azimuth is &phi; = &Delta;&phi;. The Bloch vector is (&#10216;&sigma;<sub>x</sub>&#10217;, &#10216;&sigma;<sub>y</sub>&#10217;, &#10216;&sigma;<sub>z</sub>&#10217;) = (2|c&#8321;||c&#8322;| cos &Delta;&phi;, 2|c&#8321;||c&#8322;| sin &Delta;&phi;, |c&#8321;|&sup2; &minus; |c&#8322;|&sup2;), with |+&#10217;<sub>z</sub> at the north pole. Time evolution is a <strong>precession about the energy axis</strong> (drawn in orange and blue, labeled E&#8321; and E&#8322;; the z axis by default) at &omega;&#8322;&#8321;: the latitude (the probabilities |c<sub>n</sub>|&sup2;) is fixed and only the longitude (the relative phase) changes. The green and yellow dots mark |+&#10217; and |&minus;&#10217; of the measurement basis. If the state vector makes an angle &gamma; with the green dot, then P(+) = cos&sup2;(&gamma;/2) and P(&minus;) = sin&sup2;(&gamma;/2).</p>
 
-            <h3>7. Magnetic resonance: a time-dependent H</h3>
-            <p>The <strong>OSCILLATING DRIVE</strong> adds a field B&#8321;cos(&omega;t) perpendicular to B&#8320;. With B&#8320; along z (following L. Engelhardt, <em>Am. J. Phys.</em> <strong>83</strong>, 1051 (2015)),</p>
-            <div class="formula">H(t)/&hbar; = &omega;&#8320; S<sub>z</sub> + &Omega; S<sub>x</sub> cos(&omega;t),&nbsp;&nbsp;&nbsp; &omega;&#8320; = &gamma;B&#8320;,&nbsp;&nbsp;&nbsp; &Omega; = &gamma;B&#8321;</div>
-            <p>(S in units of &hbar; for an electron or neutron; the proton's H has the opposite sign. &Omega; is called &omega;&#8321; in the paper; here &omega;&#8321; already means E&#8321;/&hbar;.) The energy eigenstates of H&#8320; are no longer stationary: |c&#8321;| and |c&#8322;| change, so the arrows change length and the Bloch vector leaves its circle. There is no closed-form solution, so the simulation integrates the Schr&ouml;dinger equation numerically (exactly unitary steps; because H(t) repeats every drive period, one period is enough to reach any time).</p>
-            <p><strong>Resonance.</strong> When &omega; = &omega;&#8320; the spin flips completely: starting in |+&#10217;<sub>z</sub>, P(&minus;<sub>z</sub>) reaches 1 at the flip time &tau; = 2&pi;/&Omega;. Off resonance the flip is incomplete, with p<sub>flip</sub> &asymp; (&Omega;/2)&sup2;/[(&Omega;/2)&sup2; + (&omega; &minus; &omega;&#8320;)&sup2;], a peak of full width &Omega; (Rabi's formula). The <strong>+ &tau;</strong> button jumps by the time of the largest flip, &pi;/&radic;((&Omega;/2)&sup2; + (&omega; &minus; &omega;&#8320;)&sup2;).</p>
-            <p><strong>Why it flips.</strong> The spin precesses about the total field B(t) (the red arrow on the Bloch sphere). The drive tips B(t) back and forth; on resonance the tip reverses each time the spin is at the bottom of its precession, so the spin spirals from the north pole to the south pole. The small <strong>wiggles</strong> in P(t), 2&omega;&#8320;/&Omega; of them per flip, come from the spin being pulled down twice per drive cycle.</p>
-            <p><strong>Illustrative or realistic.</strong> ILLUSTRATIVE uses strong drives (&Omega;/&omega;&#8320; around 0.1, as in the paper) so the spiral and the wiggles can be seen. REALISTIC uses laboratory strengths (B&#8321; from 1 &mu;T to 1 mT; for a qubit &Omega; from 0.001 to 1 rad/ns): &Omega;/&omega;&#8320; is about 10&minus;&sup2; or much less, so a flip takes hundreds to millions of Larmor turns. Then the views are <strong>strobed</strong>: the arrows are shown once every two drive periods, like a strobe light synchronized to the drive, and the fast precession is drawn as a blur (its speed on screen is only for show). The probability plot shows the band that the fast precession sweeps. The detuning is set in units of &Omega;, and playback speed scales to the flip time.</p>
-
             <h3>Units</h3>
-            <p>A spin uses <strong>&mu;eV and ns</strong>, with fields in tesla (the <strong>SET BY</strong> toggle shows angular frequencies &omega;&#8320; = &gamma;B&#8320; and &Omega; = &gamma;B&#8321; in rad/ns instead). Conveniently &hbar; = 0.6582 &mu;eV&middot;ns, so a period is T = h/E = 4.136 ns &divide; E(&mu;eV). Gyromagnetic ratios: electron 176.1 rad/ns/T (28.02 GHz/T), proton 0.2675 rad/ns/T (42.58 MHz/T), neutron 0.1832 rad/ns/T (29.16 MHz/T). The electron default, B&#8320; = 0.35 T, is an X-band ESR field (&omega;&#8320;/2&pi; = 9.8 GHz); the proton default, 3 T, is an MRI field (128 MHz). Note that f = &omega;/2&pi;: a &ldquo;GHz&rdquo; that is really rad/ns is off by 2&pi;. A qubit uses &mu;eV and ns, or the <strong>&hbar; = 1</strong> option (in DISPLAY OPTIONS): energies in a unit &epsilon;, angular frequencies in &epsilon;/&hbar; and time in &hbar;/&epsilon;. Switching units keeps the energy numbers and resets t to 0.</p>
+            <p>The <strong>UNITS</strong> toggle (in DISPLAY OPTIONS) chooses <strong>physical units</strong> (the default) or <strong>&hbar; = 1</strong>. Physical units depend on the system: <strong>eV and fs</strong> for a spin and <strong>&mu;eV and ns</strong> for a qubit. Conveniently, &hbar; = 0.6582 in both (0.6582 eV&middot;fs = 0.6582 &mu;eV&middot;ns), so a period is T = h/E = 4.136 fs &divide; E(eV), or 4.136 ns &divide; E(&mu;eV). With the spin defaults E&#8321; = 1 eV and E&#8322; = 2.5 eV: T&#8321; = 4.14 fs, T&#8322; = 1.65 fs and T&#8322;&#8321; = 2.76 fs (a 1.5 eV gap is a near-infrared photon, the scale of atomic transitions). &hbar; = 1 is dimensionless: energies in a unit &epsilon;, angular frequencies in &epsilon;/&hbar; and time in &hbar;/&epsilon;, so &omega; equals E numerically. Switching units keeps the energy numbers and resets t to 0.</p>
 
             <h2>CONTROLS</h2>
             <ul>
                 <li><strong>Initial state:</strong> the six buttons choose |&plusmn;&#10217;<sub>z</sub>, |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub>. <strong>(&theta;, &phi;)</strong> opens sliders for a direction in space, in units of &pi;. <strong>|c&#8322;|, &phi;&#8322;</strong> opens sliders for the |&minus;&#10217;<sub>z</sub> coefficient directly, and the |+&#10217;<sub>z</sub> coefficient follows from normalization. The two slider modes describe the same state, so switching between them keeps it.</li>
                 <li><strong>Measurement basis:</strong> |&plusmn;&#10217;<sub>z</sub>, |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub> or |&plusmn;&#10217;<sub>n</sub>(&theta;, &phi;). The Measurement probabilities view plots P(+) and P(&minus;); its &minus;/+ buttons zoom the time axis.</li>
-                <li><strong>Resetting the clock:</strong> changing the initial state, the field, the drive, the eigenstates or an energy sets t back to 0. Changing the measurement basis does not, because it only changes what is being measured.</li>
+                <li><strong>Resetting the clock:</strong> changing the initial state, the energy eigenstates or an energy sets t back to 0. Changing the measurement basis does not, because it only changes what is being measured.</li>
                 <li><strong>Define Hamiltonian:</strong> the DEFINE HAMILTONIAN panel starts collapsed and shows a summary of the eigenstates and energies; click it to open it in place. <strong>EIGENSTATES</strong> opens a pop-up to choose |&plusmn;&#10217;<sub>z</sub> (default), |&plusmn;&#10217;<sub>x</sub>, |&plusmn;&#10217;<sub>y</sub> or |&plusmn;&#10217;<sub>n</sub>(&theta;, &phi;). <strong>MATRIX REPRESENTATION</strong> shows H as a 2&times;2 matrix in the z, x or y basis (or n, when the eigenstates are |&plusmn;&#10217;<sub>n</sub>). The level diagram labels each line with its ket. Changing the eigenstates resets t to 0.</li>
-                <li><strong>Field or energies:</strong> for a spin, choose ELECTRON, PROTON or NEUTRON and set B&#8320; (0&ndash;1 T for the electron, 0&ndash;10 T for the nuclei), by slider or by dragging a level; B&#8320; DIRECTION sets its direction. For a qubit, set E&#8320; and E&#8321; from &minus;25 to 25 &mu;eV; BOTH E &plusmn; 5 shifts the zero of energy. The panel lists &omega;&#8321;, &omega;&#8322;, &omega;&#8322;&#8321; and the matching periods.</li>
-                <li><strong>Oscillating drive:</strong> ON/OFF, ILLUSTRATIVE or REALISTIC range, the strength B&#8321; (or &Omega;), and the frequency &omega; (realistic range: the detuning in units of &Omega;). &omega; = &omega;&#8320; tunes to resonance. The level diagram draws the drive's photon energy &hbar;&omega; next to the gap. The readouts give &omega;&#8320;, &Omega;/&omega;&#8320; and the flip time &tau;.</li>
-                <li><strong>Time:</strong> PLAY/PAUSE (or SPACE), reset to t = 0, step forward or back, and jump ahead by exactly one period T&#8321;, T&#8322; or T&#8322;&#8321;. Every arrow that period belongs to returns to where it started. With the drive on, the buttons are + T&#8322;&#8321; and + &tau; (one flip).</li>
+                <li><strong>Energies:</strong> E&#8321;, E&#8322; from &minus;3 to 5 eV for a spin (&minus;25 to 25 &mu;eV for a qubit). The panel lists &omega;&#8321;, &omega;&#8322;, &omega;&#8322;&#8321; and the matching periods. BOTH E &plusmn; 1 shifts the zero of energy.</li>
+                <li><strong>Time:</strong> PLAY/PAUSE (or SPACE), reset to t = 0, step forward or back, and jump ahead by exactly one period T&#8321;, T&#8322; or T&#8322;&#8321;. Every arrow that period belongs to returns to where it started.</li>
                 <li><strong>Display:</strong> TRAILS show where each arrow was a moment ago. PHASE ARCS mark each phase angle from the real axis. &omega; ARROWS show the sense and rate of rotation, with the arc length proportional to &omega;. PROJECTIONS drop the Re/Im components onto the axes, and on the Bloch sphere drop the vector onto the equator.</li>
                 <li><strong>Views:</strong> Rotating phasors, Relative phase, Bloch sphere, Measurement probabilities. Any pane can show any view.</li>
+                <li><strong>Reset to defaults:</strong> RESET TO DEFAULTS (top left, click twice) puts every setting back to how the page opened. It keeps full screen, the presentation tools and the SPIN ½ / QUBIT choice.</li>
+                <li><strong>Magnetic field:</strong> for a spin, the <strong>ENERGIES / MAGNETIC FIELD</strong> toggle at the top of DEFINE HAMILTONIAN sets H with a field B&#8320; in tesla instead, and adds an oscillating field that makes H time dependent (magnetic resonance).</li>
                 <li><strong>Presentation tools:</strong> SET TO FULL SCREEN (top left), a laser pointer and a markerboard for drawing over the screen.</li>
             </ul>
 
@@ -1078,18 +1079,45 @@
                 <li>Start in |+&#10217;<sub>z</sub>. The arrow turns, but does anything measurable change? Try every measurement basis.</li>
                 <li>Start in |+&#10217;<sub>x</sub> and measure in the x basis. Pause and press + T&#8321;. Which arrow returns to its starting position? Reset and press + T&#8322;&#8321;. What returns now, and what is P(+)?</li>
                 <li>Start in |+&#10217;<sub>x</sub> and compare the x and y measurement bases. How are the two P(+) curves shifted relative to each other? Why?</li>
-                <li>In QUBIT mode, set E&#8321; = 2E&#8320;. How many turns does c&#8321; make while c&#8320; makes one?</li>
-                <li>In QUBIT mode, press BOTH E + 5. Which views change and which do not? Why?</li>
-                <li>Switch from ELECTRON to PROTON. Which way does c&#8321; turn now, and which way does the Bloch vector precess? Why?</li>
-                <li>Slide B&#8320; toward 0. What happens to T&#8322;&#8321; and to the oscillation of P(+)?</li>
+                <li>Set E&#8322; = 2E&#8321;. How many turns does c&#8322; make while c&#8321; makes one?</li>
+                <li>Press BOTH E + 1. Which views change and which do not? Why?</li>
+                <li>Make E&#8321; negative. Which way does c&#8321; turn now?</li>
+                <li>Slide E&#8322; toward E&#8321;. What happens to T&#8322;&#8321; and to the oscillation of P(+)?</li>
                 <li>Start in |+&#10217;<sub>z</sub>, measure in the z basis, and change the energy eigenstates to |&plusmn;&#10217;<sub>x</sub>. Why do P(+) and P(&minus;) now swap back and forth between 1 and 0? Watch the Bloch sphere.</li>
                 <li>Use (&theta;, &phi;) to start at &theta; = 0.25&pi; and measure in the x basis. What is the largest P(+)? Check your answer on the Bloch sphere.</li>
+            </ol>
+
+            <div class="b-only">
+            <h2>MAGNETIC-FIELD MODE</h2>
+            <p>This section describes the mode chosen with <strong>MAGNETIC FIELD</strong> at the top of DEFINE HAMILTONIAN.</p>
+            <h3>A spin in a static field</h3>
+            <p><strong>A spin in a field B&#8320;</strong> along n&#770; has H = &minus;&mu;&middot;B&#8320; with &mu; = &gamma;S (proton) or &mu; = &minus;&gamma;S (electron, neutron), so E = &plusmn;&hbar;&omega;&#8320;/2 with the <strong>Larmor frequency</strong> &omega;&#8320; = &gamma;B&#8320;. For the electron and neutron |+&#10217;<sub>n</sub> is the upper level; for the proton it is the lower one, so its phasors and its precession turn the other way. The energies are symmetric about zero, so &omega;&#8322;&#8321; = &mp;&omega;&#8320;.</p>
+            <h3>Magnetic resonance: a time-dependent H</h3>
+            <p>The <strong>OSCILLATING DRIVE</strong> adds a field B&#8321;cos(&omega;t) perpendicular to B&#8320;. With B&#8320; along z (following L. Engelhardt, <em>Am. J. Phys.</em> <strong>83</strong>, 1051 (2015)),</p>
+            <div class="formula">H(t)/&hbar; = &omega;&#8320; S<sub>z</sub> + &Omega; S<sub>x</sub> cos(&omega;t),&nbsp;&nbsp;&nbsp; &omega;&#8320; = &gamma;B&#8320;,&nbsp;&nbsp;&nbsp; &Omega; = &gamma;B&#8321;</div>
+            <p>(S in units of &hbar; for an electron or neutron; the proton's H has the opposite sign. &Omega; is called &omega;&#8321; in the paper; here &omega;&#8321; already means E&#8321;/&hbar;.) The energy eigenstates of H&#8320; are no longer stationary: |c&#8321;| and |c&#8322;| change, so the arrows change length and the Bloch vector leaves its circle. There is no closed-form solution, so the simulation integrates the Schr&ouml;dinger equation numerically (exactly unitary steps; because H(t) repeats every drive period, one period is enough to reach any time).</p>
+            <p><strong>Resonance.</strong> When &omega; = &omega;&#8320; the spin flips completely: starting in |+&#10217;<sub>z</sub>, P(&minus;<sub>z</sub>) reaches 1 at the flip time &tau; = 2&pi;/&Omega;. Off resonance the flip is incomplete, with p<sub>flip</sub> &asymp; (&Omega;/2)&sup2;/[(&Omega;/2)&sup2; + (&omega; &minus; &omega;&#8320;)&sup2;], a peak of full width &Omega; (Rabi's formula). The <strong>+ &tau;</strong> button jumps by the time of the largest flip, &pi;/&radic;((&Omega;/2)&sup2; + (&omega; &minus; &omega;&#8320;)&sup2;).</p>
+            <p><strong>Why it flips.</strong> The spin precesses about the total field B(t) (the red arrow on the Bloch sphere). The drive tips B(t) back and forth; on resonance the tip reverses each time the spin is at the bottom of its precession, so the spin spirals from the north pole to the south pole. The small <strong>wiggles</strong> in P(t), 2&omega;&#8320;/&Omega; of them per flip, come from the spin being pulled down twice per drive cycle.</p>
+            <p><strong>Illustrative or realistic.</strong> ILLUSTRATIVE uses strong drives (&Omega;/&omega;&#8320; around 0.1, as in the paper) so the spiral and the wiggles can be seen. REALISTIC uses laboratory strengths (B&#8321; from 1 &mu;T to 1 mT): &Omega;/&omega;&#8320; is about 10&minus;&sup2; or much less, so a flip takes hundreds to millions of Larmor turns. Then the views are <strong>strobed</strong>: the arrows are shown once every two drive periods, like a strobe light synchronized to the drive, and the fast precession is drawn as a blur (its speed on screen is only for show). The probability plot shows the band that the fast precession sweeps. The detuning is set in units of &Omega;, and playback speed scales to the flip time.</p>
+
+            <h3>Units in this mode</h3>
+            <p>This mode uses <strong>&mu;eV and ns</strong>, with fields in tesla (the <strong>SET BY</strong> toggle shows angular frequencies &omega;&#8320; = &gamma;B&#8320; and &Omega; = &gamma;B&#8321; in rad/ns instead). Conveniently &hbar; = 0.6582 &mu;eV&middot;ns, so a period is T = h/E = 4.136 ns &divide; E(&mu;eV). Gyromagnetic ratios: electron 176.1 rad/ns/T (28.02 GHz/T), proton 0.2675 rad/ns/T (42.58 MHz/T), neutron 0.1832 rad/ns/T (29.16 MHz/T). The electron default, B&#8320; = 0.35 T, is an X-band ESR field (&omega;&#8320;/2&pi; = 9.8 GHz); the proton default, 3 T, is an MRI field (128 MHz). Note that f = &omega;/2&pi;: a &ldquo;GHz&rdquo; that is really rad/ns is off by 2&pi;.</p>
+
+            <h3>Controls in this mode</h3>
+            <ul>
+                <li><strong>Field:</strong> choose ELECTRON, PROTON or NEUTRON and set B&#8320; (0&ndash;1 T for the electron, 0&ndash;10 T for the nuclei), by slider or by dragging a level; B&#8320; DIRECTION sets its direction. <strong>SET BY</strong> shows the field as an angular frequency instead. Switching back to <strong>ENERGIES</strong> returns to E&#8321; and E&#8322; as they were.</li>
+                <li><strong>Oscillating drive:</strong> (just below the ENERGIES / MAGNETIC FIELD toggle) ON/OFF; switching it on sets up magnetic resonance (B&#8320; along z, start in |+&#10217;<sub>z</sub>, measure along z, t = 0) and shows all four views, with Relative phase and the Bloch sphere below. Then ILLUSTRATIVE or REALISTIC range, the strength B&#8321; (or &Omega;), and the frequency &omega; (realistic range: the detuning in units of &Omega;). &omega; = &omega;&#8320; tunes to resonance. The level diagram draws the drive's photon energy &hbar;&omega; next to the gap. The readouts give &omega;&#8320;, &Omega;/&omega;&#8320; and the flip time &tau;.</li>
+                <li><strong>Time:</strong> with the drive on, + &tau; jumps ahead by one flip time.</li>
+            </ul>
+            <h3>Things to try</h3>
+            <ol>
                 <li><strong>Magnetic resonance.</strong> Start in |+&#10217;<sub>z</sub>, measure in z, and turn the drive ON (on resonance). Watch the Bloch vector spiral down. Press + &tau;: is the spin flipped?</li>
                 <li>Count the small wiggles in P(t) between t = 0 and &tau;. Compare with 2&omega;&#8320;/&Omega;. Halve B&#8321;: what happens to &tau; and to the number of wiggles?</li>
                 <li>Move &omega; away from &omega;&#8320; by about &Omega;/2, then by 2&Omega;. What is the largest P(&minus;<sub>z</sub>) now? Compare with Rabi's formula in section 7.</li>
                 <li>Set &omega; = 0: now B&#8321; is a static tilt. Why does the spin no longer flip?</li>
                 <li>Switch to REALISTIC. How many Larmor turns does one flip take? Why does a small B&#8321; make magnetic resonance such a precise probe of B&#8320;?</li>
             </ol>
+            </div>
 
             <h2>CREDITS &amp; LICENSE</h2>
             <p style="text-align:center; line-height:1.8;">
@@ -1120,6 +1148,7 @@
         { key:'bloch',    label:'◎ Bloch sphere' },
         { key:'plots',    label:'∿ Measurement probabilities' }
     ];
+    const PANE0 = ['phasor', 'plots', 'relative', 'bloch'];   // starting view of each pane (2 views shown at first)
     const YAW0 = -1.92, PITCH0 = 0.32;
     const MIN_VIEW_W = 340;
 
@@ -1129,21 +1158,21 @@
         init: { m2: Math.SQRT1_2, ph2: 0, pick: 'px' },     // initial state |psi(0)>
         meas: { pick: 'x', th: PI/4, ph: 0 },              // measurement basis |+>m, |->m
         basis: { pick: 'z', th: PI/4, ph: 0 },            // energy eigenbasis: |E1> = |+>n, |E2> = |->n
-        E1: 1, E2: 2.5,                          // energies (for a spin they follow from B0: see applyField)
-        // spin: the particle and its static field B0 (tesla), remembered per particle
-        particle: 'e', fieldIn: 'B', B0: { e: 0.35, p: 3, n: 3 },
-        // drive controls: amp = B1 (tesla) for a spin or w1 (rad/ns) for a qubit, per particle and range;
-        // w = drive angular frequency (illustrative range); det = (w - w0)/w1 (realistic range)
-        drv: { on: false, range: 'ill', det: 0, w: { e: 0, p: 0, n: 0, q: 0 },
-               amp: { e: { ill: 0.035, real: 1e-4 }, p: { ill: 0.3, real: 1e-5 }, n: { ill: 0.3, real: 1e-5 }, q: { ill: 3.145, real: 0.2 } } },
+        E1: 1, E2: 2.5,                          // energies, hbar = 1 (in B-field mode they follow from B0: see applyField)
+        // B-FIELD mode (spin only, off until MAGNETIC FIELD is chosen in DEFINE HAMILTONIAN): the particle and its static field B0 (tesla)
+        bMode: false, particle: 'e', fieldIn: 'B', B0: { e: 0.35, p: 3, n: 3 },
+        // drive controls: amp = B1 (tesla) per particle and range; w = drive angular frequency (illustrative
+        // range); det = (w - w0)/Omega (realistic range)
+        drv: { on: false, range: 'ill', det: 0, w: { e: 0, p: 0, n: 0 },
+               amp: { e: { ill: 0.035, real: 1e-4 }, p: { ill: 0.3, real: 1e-5 }, n: { ill: 0.3, real: 1e-5 } } },
         // what the dynamics use: <E1|H|E2>/hbar = (w1/2) cos(w t), as in H/hbar = w0 sz + w1 sx cos(w t)
         // (with w1 = 0 the analytic solution is used)
         drive: { w1: 0, w: 0 }, forceNum: false,
         t: 0, playing: false, speed: 0.5,
         tZoom: 1,                                         // time-plot zoom (shared by every plot)
-        layout: 4, trails: true, arcs: true, omegaLbl: true, proj: false,
+        layout: 2, trails: true, arcs: true, omegaLbl: true, proj: false,
         system: 'spin', unitMode: 'phys', matBasis: 'z', speedV: 0.5,
-        Esaved: { qubit: { E1: -10.35, E2: 10.35 } },   // the qubit keeps its energies while a spin is shown
+        Esaved: { spin: { E1: 1, E2: 2.5 }, qubit: { E1: -10.35, E2: 10.35 } },   // each system keeps its own energies
         yaw: YAW0, pitch: PITCH0
     };
 
@@ -1204,15 +1233,16 @@
         return [inner(e1, psi), inner(e2, psi)];
     }
     function mags(){ const [c1, c2] = coeffs0(); return [Math.hypot(...c1), Math.hypot(...c2)]; }
-    // units: energies in μeV and time in ns (hbar = 0.6582 μeV ns), or dimensionless with hbar = 1 (qubit only)
+    // units: energies in eV and time in fs (hbar = 0.6582 eV fs), or dimensionless with hbar = 1
     const UNITS = {
+        eVfs:  { hbar: 0.6582119569, E: ' eV',  t: ' fs', tn: 'fs',  tAxis: 't (fs)',  w: 'rad/fs', en: 'eV',  Eunit: '(eV)',  hbarNote: 'ħ = 0.658 eV·fs', speed: 'fs' },
         ueVns: { hbar: 0.6582119569, E: ' μeV', t: ' ns', tn: 'ns',  tAxis: 't (ns)',  w: 'rad/ns', en: 'μeV', Eunit: '(μeV)', hbarNote: 'ħ = 0.658 μeV·ns', speed: 'ns' },
         nat:   { hbar: 1,            E: '',     t: '',    tn: 'ħ/ε', tAxis: 't (ħ/ε)', w: 'ε/ħ',    en: 'units of ε', Eunit: '(units of ε)', hbarNote: 'ħ = 1', speed: 'time units' }
     };
     // per-system settings: physical units, energy slider range, BOTH E ± step, playback-speed scale
-    // (a spin's energy range and speed come from its particle, below)
+    // (in B-field mode the energy range and speed come from the particle, below)
     const SYS = {
-        spin:  { units: 'ueVns' },
+        spin:  { units: 'eVfs',  min: -3,  max: 5,  step: 0.05, shift: 1, speedScale: 1 },
         qubit: { units: 'ueVns', min: -25, max: 25, step: 0.05, shift: 5, speedScale: 0.05 }
     };
     // particles: gyromagnetic ratio |gamma| (rad/ns/T, CODATA 2018), sgn = +1 if the moment is antiparallel
@@ -1224,11 +1254,12 @@
         n: { name: 'neutron',  gamma: 0.1832471,  g: '−3.826',   sgn:  1, B0max: 10, B0step: 0.01,  B1max: 5,   B1step: 0.005,  wStep: 0.001, speed: 6 }
     };
     const isSpin = () => S.system === 'spin';
+    const bOn = () => S.bMode && isSpin();                // B-field mode: a spin in a field, always in μeV and ns
     const PT = () => PART[S.particle];
-    const U = () => UNITS[S.unitMode === 'nat' && !isSpin() ? 'nat' : SYS[S.system].units];
-    // energy range of the level diagram (and the qubit sliders)
+    const U = () => UNITS[bOn() ? 'ueVns' : S.unitMode === 'nat' ? 'nat' : SYS[S.system].units];
+    // energy range of the level diagram (and the energy sliders)
     function Erange(){
-        if (!isSpin()) return { min: SYS.qubit.min, max: SYS.qubit.max };
+        if (!bOn()) return { min: SYS[S.system].min, max: SYS[S.system].max };
         const m = 1.08*U().hbar*PT().gamma*PT().B0max/2;
         return { min: -m, max: m };
     }
@@ -1273,17 +1304,18 @@
     function w21(){ return (S.E2 - S.E1)/U().hbar; }
     // ---------- the field model and the drive ----------
     const w0 = () => Math.abs(w21());
-    const dKey = () => isSpin() ? S.particle : 'q';
-    const drvAmp = () => S.drv.amp[dKey()][S.drv.range];                 // B1 (T) or w1 (rad/ns)
-    // drive strength as a (positive) angular frequency: w1 = |gamma| B1 for a spin
-    const drvW1 = () => isSpin() ? PT().gamma*drvAmp() : drvAmp();
-    const drvOn = () => S.drv.on && drvAmp() > 0;
+    const dKey = () => S.particle;
+    const drvAmp = () => S.drv.amp[dKey()][S.drv.range];                 // B1 (T)
+    // drive strength as a (positive) angular frequency: Omega = |gamma| B1
+    const drvW1 = () => PT().gamma*drvAmp();
+    const drvOn = () => bOn() && S.drv.on && drvAmp() > 0;
     const realistic = () => drvOn() && S.drv.range === 'real';
-    // push the controls into the model: a spin's energies follow from B0, and the drive from its controls
+    // push the controls into the model: in B-field mode the energies follow from B0, and the drive from its controls
     function applyField(){
-        if (isSpin()){ const E = PT().sgn*U().hbar*PT().gamma*S.B0[S.particle]/2; S.E1 = E; S.E2 = -E; }
+        if (!bOn()){ S.drive.w1 = 0; S.drive.w = 0; return; }
+        const E = PT().sgn*U().hbar*PT().gamma*S.B0[S.particle]/2; S.E1 = E; S.E2 = -E;
         const W1 = drvW1();
-        S.drive.w1 = drvOn() ? (isSpin() ? PT().sgn : 1)*W1 : 0;
+        S.drive.w1 = drvOn() ? PT().sgn*W1 : 0;
         S.drive.w = S.drv.range === 'real' ? Math.max(0, w0() + S.drv.det*W1) : S.drv.w[dKey()];
     }
     // time for the largest flip, pi/Omega with Omega = sqrt((w1/2)^2 + (w - w0)^2) (rotating-wave estimate;
@@ -1297,7 +1329,7 @@
     // factor e^{-iE t/hbar} has come round), with the fast precession drawn as a blur
     const strobeT = () => realistic() && S.drive.w > 0 ? 2*TAU/S.drive.w : 0;
     const strobe = t => { const T = strobeT(); return T ? Math.floor(t/T)*T : t; };
-    const speedEff = () => realistic() ? S.speedV*tauFlip()/5 : S.speedV*(isSpin() ? PT().speed : SYS.qubit.speedScale);
+    const speedEff = () => realistic() ? S.speedV*tauFlip()/5 : S.speedV*(bOn() ? PT().speed : SYS[S.system].speedScale);
     // readable numbers: tesla with a prefix, and 3 significant figures
     function sig(v, n){
         if (!isFinite(v)) return '∞';
@@ -1307,11 +1339,13 @@
         return str.replace('-', '−');
     }
     function fmtT(B){ const a = Math.abs(B); return a >= 0.1 ? sig(B, 3) + ' T' : a >= 1e-4 ? sig(B*1e3, 3) + ' mT' : sig(B*1e6, 3) + ' μT'; }
-    const fmtE = v => fmt(v, Math.abs(v) < 1 && v !== 0 ? 3 : 2);
-    // a time with its unit; long times in ns read as microseconds or milliseconds
+    const fmtE = v => fmt(v, bOn() && Math.abs(v) < 1 && v !== 0 ? 3 : 2);
+    const fmtW = v => bOn() ? sig(v, 3) : fmt(v, 2);      // frequencies and periods: 3 significant figures in B-field mode
+    // a time with its unit; in B-field mode, long times in ns read as microseconds or milliseconds
     function fmtTime(v){
-        if (U() === UNITS.ueVns && Math.abs(v) >= 1e6) return sig(v/1e6, 4) + ' ms';
-        if (U() === UNITS.ueVns && Math.abs(v) >= 1e4) return sig(v/1e3, 4) + ' μs';
+        if (!bOn()) return fmt(v, 2) + U().t;
+        if (Math.abs(v) >= 1e6) return sig(v/1e6, 4) + ' ms';
+        if (Math.abs(v) >= 1e4) return sig(v/1e3, 4) + ' μs';
         return fmt(v, 2) + U().t;
     }
     const driven = () => S.forceNum || S.drive.w1 !== 0;
@@ -1519,8 +1553,22 @@
               wName: frame === 'c1' ? 'ω₂₁' : 'ω₂', phName: 'φ₂' }
         ];
 
-        // trails: past positions from the trajectory, fading with age (not under the strobe)
-        if (S.trails && !realistic()){
+        // trails, static H: analytic past positions on the circle (phase at t - dt is ph + w*dt)
+        if (S.trails && !drvOn()){
+            const wMax = Math.max(0.25, ...arrows.map(a => Math.abs(a.w)));
+            const tau = 1.4/wMax, N = 36;
+            for (const a of arrows){
+                if (a.m < 0.02 || Math.abs(a.w) < 1e-9) continue;
+                for (let k = N; k >= 1; k--){
+                    const q0 = a.ph + a.w*tau*k/N, q1 = a.ph + a.w*tau*(k - 1)/N;
+                    ctx.globalAlpha = 0.55*(1 - k/N);
+                    mathArc(ctx, cx, cy, R*a.m, Math.min(q0, q1), Math.max(q0, q1), a.col, 5);
+                }
+                ctx.globalAlpha = 1;
+            }
+        }
+        // trails, driven: past positions from the trajectory, fading with age (not under the strobe)
+        if (S.trails && drvOn() && !realistic()){
             const wMax = Math.max(0.25, ...arrows.map(a => Math.abs(a.w)));
             const tau = 1.4/wMax, N = 36;
             const past = [];
@@ -1755,11 +1803,11 @@
         }
         // the field: B(t) = B0 + B1 cos(wt) along x' (the direction the spin precesses about)
         if (drv && !real){
-            const sg = isSpin() ? PT().sgn : 1, bz = w21() === 0 ? 0 : -sg*W21/2, bx = sg*0.5*S.drive.w1*Math.cos(S.drive.w*tv);
+            const sg = PT().sgn, bz = -sg*W21/2, bx = sg*0.5*S.drive.w1*Math.cos(S.drive.w*tv);
             const L = Math.hypot(bx, bz) || 1, f = E(1.25*bx/L, 0, 1.25*bz/L);
             ctx.globalAlpha = f.d >= 0 ? 1 : 0.6;
             arrow(ctx, o.X, o.Y, f.X, f.Y, '#f87171', 2.2, 10);
-            txt(ctx, isSpin() ? 'B(t)' : 'H(t)', f.X + 8, f.Y - 8, '#f87171', 12.5, 'left', 'middle', 800);
+            txt(ctx, 'B(t)', f.X + 8, f.Y - 8, '#f87171', 12.5, 'left', 'middle', 800);
             ctx.globalAlpha = 1;
         }
         // state vector
@@ -1771,13 +1819,17 @@
         const theta = 2*Math.atan2(st.m2, st.m1);
         txt(ctx, 'angle from E₁ axis = ' + fmtPi(theta) + (drv ? '  (the drive changes it)' : '  (fixed)'), 10, h - 28, COL.text, 12.5, 'left', 'alphabetic', 700);
         txt(ctx, drv ? (real ? 'arrow: once per 2 drive periods · one flip in τ = ' + (tauFlip() < 1e4 ? sig(tauFlip(), 3) + U().t : fmtTime(tauFlip()))
-                             : 'precesses about ' + (isSpin() ? 'B(t)' : 'H(t)') + ', which tips back and forth at ω')
-                     : 'azimuth = Δφ = ' + (rho > 0.02 ? fmtPi(wrap(st.dphi)) : 'undefined') + '  · precesses at ω₂₁ = ' + sig(W21, 3),
+                             : 'precesses about B(t), which tips back and forth at ω')
+                     : 'azimuth = Δφ = ' + (rho > 0.02 ? fmtPi(wrap(st.dphi)) : 'undefined') + '  · precesses at ω₂₁ = ' + fmtW(W21),
             10, h - 10, COL.rel, 12.5, 'left', 'alphabetic', 800);
     }
 
     // ---------- VIEW: time plots ----------
     function niceStep(raw){
+        if (!bOn()){
+            for (const s of [0.005, 0.01, 0.02, 0.025, 0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100]) if (s >= raw) return s;
+            return 200;
+        }
         const p = Math.pow(10, Math.floor(Math.log10(raw)));
         for (const m of [1, 2, 2.5, 5]) if (m*p >= raw*(1 - 1e-9)) return m*p;
         return 10*p;
@@ -1797,7 +1849,7 @@
         // too many fast turns in the window to draw (always so under the strobe): draw the band that the fast
         // precession about B0 sweeps out. With Bloch vector b, field axis n and measurement axis m,
         // b.m ranges over (b.n)(m.n) +- |b x n| |m x n|, so P(+-) = (1 +- b.m)/2 covers a band.
-        const band = realistic() || w0()*W/TAU > N/6;
+        const band = realistic() || (bOn() && w0()*W/TAU > N/6);
         const nA = toLab({ x: 0, y: 0, z: 1 }, eFrame()), mA = measAxis(), mn = mA.x*nA.x + mA.y*nA.y + mA.z*nA.z;
         const mPerp = Math.sqrt(Math.max(0, 1 - mn*mn));
         const samples = [];
@@ -1816,9 +1868,9 @@
         const ser = [ { f: s => s.P[0], col: COL.pp, sg: '+', k: 0 }, { f: s => s.P[1], col: COL.pm, sg: '−', k: 1 } ];
         const tick = niceStep(W/6);
         // long windows in ns read better in microseconds or milliseconds
-        const nsU = U() === UNITS.ueVns, sc = nsU && W > 2e6 ? 1e-6 : nsU && W > 2e3 ? 1e-3 : 1;
+        const sc = bOn() && W > 2e6 ? 1e-6 : bOn() && W > 2e3 ? 1e-3 : 1;
         const tAxis = sc === 1 ? U().tAxis : sc === 1e-3 ? 't (μs)' : 't (ms)';
-        const tLab = v => sig(v*sc, 4);
+        const tLab = v => bOn() ? sig(v*sc, 4) : fmt(v, Number.isInteger(tick) ? 0 : Number.isInteger(tick*10) ? 1 : 2);
         const cur = state(S.t); cur.P = measProbs(cur);
         const xc = X(S.t), y0 = T;
         const Y = v => y0 + (1 - v)*rowH;
@@ -1906,7 +1958,7 @@
 
     // ---------- panes ----------
     const panes = [...document.querySelectorAll('.view-pane')].map((el, i) => ({
-        el, canvas: el.querySelector('canvas'), select: el.querySelector('select'), view: VIEWS[i].key
+        el, canvas: el.querySelector('canvas'), select: el.querySelector('select'), view: PANE0[i]
     }));
     panes.forEach(p => {
         for (const v of VIEWS){ const o = document.createElement('option'); o.value = v.key; o.textContent = v.label; p.select.appendChild(o); }
@@ -1955,18 +2007,18 @@
     }
     // labels and readouts of the field and drive controls
     function updateFieldText(){
-        const pt = PT(), real = S.drv.range === 'real', byW = isSpin() && S.fieldIn === 'w', uw = ' ' + U().w;
-        const W0 = isSpin() ? 'ω₀' : 'ω<sub>q</sub>', wu = ' <span class="w-unit">(' + U().w + ')</span>';
+        const pt = PT(), real = S.drv.range === 'real', byW = S.fieldIn === 'w', uw = ' ' + U().w;
+        const W0 = 'ω₀', wu = ' <span class="w-unit">(' + U().w + ')</span>';
         const B0 = S.B0[S.particle];
         $('B0Lbl').innerHTML = byW ? 'ω₀ = γB₀, Larmor frequency' + wu : 'B₀, static field';
         $('B0Val').textContent = byW ? sig(pt.gamma*B0, 3) : fmtT(B0);
         $('partNote').innerHTML = 'γ = ' + sig(pt.gamma, 4) + ' rad/ns/T = ' + (pt.gamma/TAU >= 1 ? sig(pt.gamma/TAU, 4) + ' GHz/T' : sig(pt.gamma/TAU*1e3, 4) + ' MHz/T') + ' · g = ' + pt.g +
             '<br>μ is ' + (pt.sgn > 0 ? 'antiparallel' : 'parallel') + ' to the spin: |+⟩ along B₀ is the ' + (pt.sgn > 0 ? 'upper' : 'lower') + ' level';
-        $('hamSub').textContent = isSpin() ? 'Static field B₀' : 'Energy eigenstates & eigenvalues';
-        $('basisBtnTitle').textContent = isSpin() ? 'B₀ DIRECTION' : 'EIGENSTATES';
+        $('hamSub').textContent = bOn() ? 'Static field B₀' : 'Energy eigenstates & eigenvalues';
+        $('basisBtnTitle').textContent = bOn() ? 'B₀ DIRECTION' : 'EIGENSTATES';
         const W1 = drvW1(), a = drvAmp();
-        $('ampLbl').innerHTML = (isSpin() && !byW ? 'B₁, drive amplitude' : 'Ω' + (isSpin() ? ' = γB₁' : '') + ', drive strength' + wu) + (real ? ' · log scale' : '');
-        $('ampVal').textContent = isSpin() && !byW ? fmtT(a) : sig(W1, 3);
+        $('ampLbl').innerHTML = (!byW ? 'B₁, drive amplitude' : 'Ω = γB₁, drive strength' + wu) + (real ? ' · log scale' : '');
+        $('ampVal').textContent = !byW ? fmtT(a) : sig(W1, 3);
         $('freqLbl').innerHTML = real ? 'Detuning (ω − ' + W0 + ')/Ω' : 'ω, drive frequency' + wu;
         $('w0Lbl').innerHTML = W0; $('ratioLbl').innerHTML = 'Ω/' + W0; $('resonLbl').innerHTML = W0;
         $('freqVal').textContent = real ? fmt(S.drv.det, 2) : sig(S.drive.w, 3);
@@ -1978,7 +2030,7 @@
         $('drvNote').innerHTML = !drvOn() ? 'Drive off: H is time independent.'
             : 'f = ω/2π = ' + fs + ' · ' + (real ? 'strobed every 2 drive periods; about ' + sig(w0()*tau/TAU, 2) + ' Larmor turns per flip'
                                                 : 'ω − ' + W0 + ' = ' + sig(S.drive.w - w0(), 3) + uw);
-        $('drvBtnLabel').innerHTML = !drvOn() ? 'OFF' : (isSpin() ? 'B₁ = ' + fmtT(a) : 'Ω = ' + sig(W1, 3)) + '<br>' + (real ? 'realistic' : 'ω = ' + sig(S.drive.w, 3));
+        $('drvBtnLabel').innerHTML = !drvOn() ? 'OFF' : 'B₁ = ' + fmtT(a) + '<br>' + (real ? 'realistic' : 'ω = ' + sig(S.drive.w, 3));
         $('addTauBtn').style.display = drvOn() ? '' : 'none';
         $('addT1Btn').style.display = drvOn() ? 'none' : '';
         $('addT2Btn').style.display = drvOn() ? 'none' : '';
@@ -1986,17 +2038,18 @@
     function updateStatic(){
         document.body.classList.toggle('sys-spin', isSpin());
         document.body.classList.toggle('sys-qubit', !isSpin());
+        document.body.classList.toggle('b-mode', bOn());
         $('E1Val').textContent = fmt(S.E1, 2);
         $('E2Val').textContent = fmt(S.E2, 2);
-        $('w1Val').textContent = sig(w1(), 3);
-        $('w2Val').textContent = sig(w2(), 3);
-        $('w21Val').textContent = sig(w21(), 3);
-        $('T1Val').textContent = sig(period(w1()), 3);
-        $('T2Val').textContent = sig(period(w2()), 3);
-        $('T21Val').textContent = sig(period(w21()), 3);
+        $('w1Val').textContent = fmtW(w1());
+        $('w2Val').textContent = fmtW(w2());
+        $('w21Val').textContent = fmtW(w21());
+        $('T1Val').textContent = fmtW(period(w1()));
+        $('T2Val').textContent = fmtW(period(w2()));
+        $('T21Val').textContent = fmtW(period(w21()));
         updateFieldText();
         $('omegaUnits').textContent = 'ω in ' + U().w + ' · T in ' + U().tn;
-        document.querySelectorAll('.shiftAmt').forEach(el => { el.textContent = SYS.qubit.shift; });
+        document.querySelectorAll('.shiftAmt').forEach(el => { el.textContent = SYS[S.system].shift; });
         $('initConvNote').innerHTML = 'Written in the z basis, with the ' + ketH('+', 'z') + ' coefficient real and ≥ 0';
         $('basisNote').innerHTML = isQ() ? 'Which pair of qubit states are the energy eigenstates |E₁⟩ (energy E₁) and |E₂⟩ (energy E₂).'
             : 'The direction n̂ of the static field B₀. Its energy eigenstates are |E₁⟩ = |+⟩<sub>n</sub> and |E₂⟩ = |−⟩<sub>n</sub>; for the ' +
@@ -2006,7 +2059,7 @@
         $('speedUnit').textContent = U().speed;
         $('hbarNote').textContent = U().hbarNote;
         $('footEq').innerHTML = drvOn() ? 'H(t) = H<sub>0</sub> + drive: solved numerically' : 'c<sub>n</sub>(t) = c<sub>n</sub>(0) e<sup>&minus;iE<sub>n</sub>t/&hbar;</sup>';
-        $('hamBtnLabel').innerHTML = isSpin() ? PT().name + '<br>' + fmtT(S.B0[S.particle]) + ' ∥ ' + (S.basis.pick === 'n' ? 'n̂' : S.basis.pick)
+        $('hamBtnLabel').innerHTML = bOn() ? PT().name + '<br>' + fmtT(S.B0[S.particle]) + ' ∥ ' + (S.basis.pick === 'n' ? 'n̂' : S.basis.pick)
             : ketH('+', S.basis.pick) + ': ' + fmt(S.E1, 2) + U().E + '<br>' + ketH('−', S.basis.pick) + ': ' + fmt(S.E2, 2) + U().E;
         updateMatrix();
         $('addT1Btn').disabled = !isFinite(period(w1()));
@@ -2158,8 +2211,9 @@
             M.map(r => '<tr>' + r.map(z => '<td>' + fmtEntry(z) + '</td>').join('') + '</tr>').join('') +
             '</table></div><span class="mat-sub">' + (isQ() ? { z: 'Z', x: 'X', y: 'Y', n: 'θφ' }[S.matBasis] : S.matBasis) + '</span>';
         const k = S.matBasis;
-        $('matHNote').innerHTML = 'H₀ = E₁|E₁⟩⟨E₁| + E₂|E₂⟩⟨E₂|, written in the basis chosen below. ' + (drvOn()
-            ? 'The drive adds a time-dependent term: in the energy basis ⟨E₁|H(t)|E₂⟩ = ' + (isSpin() && PT().sgn < 0 ? '−' : '') + '(ħΩ/2) cos(ωt), with Ω = ' + (isSpin() ? 'γB₁ = ' : '') + sig(drvW1(), 3) + ' ' + U().w + '.'
+        $('matHNote').innerHTML = !bOn() ? 'H = E₁|E₁⟩⟨E₁| + E₂|E₂⟩⟨E₂|, written in the basis chosen below. H is time independent.'
+            : 'H₀ = E₁|E₁⟩⟨E₁| + E₂|E₂⟩⟨E₂|, written in the basis chosen below. ' + (drvOn()
+            ? 'The drive adds a time-dependent term: in the energy basis ⟨E₁|H(t)|E₂⟩ = ' + (PT().sgn < 0 ? '−' : '') + '(ħΩ/2) cos(ωt), with Ω = γB₁ = ' + sig(drvW1(), 3) + ' ' + U().w + '.'
             : 'With the drive off, H = H₀ is time independent.');
         $('matrixNote').innerHTML = 'Rows and columns: ' + ketH('+', k) + ', ' + ketH('−', k) + ' · entries in ' + U().en;
     }
@@ -2194,6 +2248,11 @@
         }));
     }
     modeSelector('layoutSel', 'layout', n => { S.layout = +n; $('viewGrid').className = 'layout-' + n; });
+    // switching the drive on shows all four views: phasors and probabilities on top, relative phase and Bloch sphere below
+    function showDrivenLayout(){
+        $('layoutSel').querySelector('[data-layout="4"]').click();
+        panes.forEach((p, i) => { p.select.value = PANE0[i]; p.select.dispatchEvent(new Event('change')); });
+    }
     // drag the energy lines up and down; the sliders follow
     (function(){
         const cv = $('levelCanvas');
@@ -2207,7 +2266,7 @@
             return d1 < d2 ? 1 : 2;
         }
         function setFrom(e){
-            if (isSpin()){
+            if (bOn()){
                 const { y, h } = local(e), sl = $('B0Slider'), st = parseFloat(sl.step);
                 const B = 2*Math.abs(levelGeom(h).E(y))/(U().hbar*PT().gamma);
                 sl.value = clamp(Math.round(B/st)*st, 0, PT().B0max); sl.dispatchEvent(new Event('input'));
@@ -2229,41 +2288,57 @@
 
     // switching units keeps the energy numbers and restarts the clock
     modeSelector('unitsSel', 'units', u => {
-        const h0 = U().hbar; S.unitMode = u; const f = h0/U().hbar, a = S.drv.amp.q;
-        S.drv.w.q *= f; a.ill *= f; a.real *= f;
+        S.unitMode = u;
         hChanged();
     });
     // switching systems: relabel, change units, and swap in that system's energies and slider range
     // slider ranges and positions for the current system, particle and drive range
     function applySystemRanges(){
-        const sy = SYS.qubit, pt = PT(), real = S.drv.range === 'real', d = S.drv;
+        const sy = SYS[S.system], pt = PT(), real = S.drv.range === 'real', d = S.drv;
         for (const id of ['E1Slider', 'E2Slider']){ const s = $(id); s.min = sy.min; s.max = sy.max; s.step = sy.step; }
         $('E1Slider').value = S.E1; $('E2Slider').value = S.E2;
         const b0 = $('B0Slider'); b0.max = pt.B0max; b0.step = pt.B0step; b0.value = S.B0[S.particle];
         // drive strength: linear in the illustrative range, log10 in the realistic one
         const am = $('ampSlider');
-        if (real){ am.min = isSpin() ? -6 : -3; am.max = isSpin() ? -3 : 0; am.step = 0.01; am.value = Math.log10(drvAmp()); }
-        else { am.min = 0; am.max = isSpin() ? pt.B1max : 38; am.step = isSpin() ? pt.B1step : 0.05; am.value = drvAmp(); }
+        if (real){ am.min = -6; am.max = -3; am.step = 0.01; am.value = Math.log10(drvAmp()); }
+        else { am.min = 0; am.max = pt.B1max; am.step = pt.B1step; am.value = drvAmp(); }
         // drive frequency: w itself (illustrative), or the detuning in units of w1 (realistic)
         const fq = $('freqSlider');
         if (real){ fq.min = -3; fq.max = 3; fq.step = 0.05; fq.value = d.det; }
         else {
-            const wmax = isSpin() ? 1.25*pt.gamma*pt.B0max : 1.25*(sy.max - sy.min)/U().hbar;
-            fq.min = 0; fq.max = wmax; fq.step = isSpin() ? pt.wStep : 0.02; fq.value = d.w[dKey()];
+            fq.min = 0; fq.max = 1.25*pt.gamma*pt.B0max; fq.step = pt.wStep; fq.value = d.w[dKey()];
         }
     }
     // any change to the Hamiltonian restarts the clock
     function hChanged(){ applyField(); S.t = 0; applySystemRanges(); updateStatic(); }
     modeSelector('systemSel', 'system', sys => {
         if (sys === S.system) return;
-        if (sys === 'spin') S.Esaved.qubit = { E1: S.E1, E2: S.E2 };
-        S.system = sys;
-        if (sys === 'qubit'){ S.E1 = S.Esaved.qubit.E1; S.E2 = S.Esaved.qubit.E2; }
+        if (!bOn()) S.Esaved[S.system] = { E1: S.E1, E2: S.E2 };   // (B-field mode saved the spin's energies on entry)
+        S.system = sys; S.E1 = S.Esaved[sys].E1; S.E2 = S.Esaved[sys].E2;
+        hChanged();                                                // (back to a spin in B-field mode: B0 sets them again)
+    });
+    // ENERGIES / MAGNETIC FIELD: the spin's energies are kept while the field defines H, and restored exactly
+    modeSelector('hModeSel', 'hmode', m => {
+        const want = m === 'B';
+        if (want === S.bMode) return;
+        if (want) S.Esaved.spin = { E1: S.E1, E2: S.E2 };
+        S.bMode = want;
+        if (!want){ S.E1 = S.Esaved.spin.E1; S.E2 = S.Esaved.spin.E2; }
         hChanged();
     });
     modeSelector('particleSel', 'particle', pk => { S.particle = pk; hChanged(); });
     modeSelector('fieldInSel', 'fieldin', f => { S.fieldIn = f; updateStatic(); });
-    modeSelector('drvOnSel', 'on', v => { S.drv.on = v === '1'; hChanged(); });
+    modeSelector('drvOnSel', 'on', v => {
+        const on = v === '1';
+        if (on && !S.drv.on){
+            // the magnetic-resonance setup: B0 along z, start in |+>z, measure along z (the drive's settings are kept)
+            S.basis.pick = 'z';
+            S.init.m2 = 0; S.init.ph2 = 0; S.init.pick = 'pz';
+            S.meas.pick = 'z';
+            showDrivenLayout();
+        }
+        S.drv.on = on; hChanged();
+    });
     modeSelector('drvRangeSel', 'range', r => { S.drv.range = r; hChanged(); });
     $('B0Slider').addEventListener('input', e => { S.B0[S.particle] = parseFloat(e.target.value); hChanged(); });
     $('ampSlider').addEventListener('input', e => {
@@ -2325,7 +2400,7 @@
     function speedText(){ const v = speedEff(); $('speedVal').textContent = v < 0.1 ? v.toFixed(3) : v.toFixed(1); }
     $('speedSlider').addEventListener('input', e => { S.speedV = parseFloat(e.target.value); speedText(); });
     function shiftE(d){
-        const sy = SYS.qubit; d *= sy.shift;
+        const sy = SYS[S.system]; d *= sy.shift;
         if (Math.min(S.E1, S.E2) + d < sy.min || Math.max(S.E1, S.E2) + d > sy.max) return;
         S.E1 = Math.round((S.E1 + d)*100)/100; S.E2 = Math.round((S.E2 + d)*100)/100; hChanged();
     }
@@ -2501,7 +2576,37 @@
     initMarkerboard();
     // every drive starts tuned to resonance at its default field
     for (const k in PART) S.drv.w[k] = PART[k].gamma*S.B0[k];
-    S.drv.w.q = Math.abs(S.Esaved.qubit.E2 - S.Esaved.qubit.E1)/UNITS.ueVns.hbar;
+    // ---------- reset to defaults ----------
+    // every setting goes back to its start-up value; full screen, the presentation tools, the open/closed
+    // panels and SPIN ½ / QUBIT are kept. A first click arms the button, a second within 3 s resets.
+    const RESET_KEYS = ['init', 'meas', 'basis', 'bMode', 'particle', 'fieldIn', 'B0', 'drv', 'speedV', 'tZoom', 'layout',
+                        'trails', 'arcs', 'omegaLbl', 'proj', 'unitMode', 'matBasis', 'Esaved', 'yaw', 'pitch'];
+    const DEFAULTS = JSON.parse(JSON.stringify(Object.fromEntries(RESET_KEYS.map(k => [k, S[k]]))));
+    function markSel(id, attr, val){ $(id).querySelectorAll('.mode-opt').forEach(o => o.classList.toggle('selected', o.dataset[attr] === String(val))); }
+    function resetAll(){
+        const d = JSON.parse(JSON.stringify(DEFAULTS));
+        for (const k of RESET_KEYS) S[k] = d[k];
+        S.E1 = S.Esaved[S.system].E1; S.E2 = S.Esaved[S.system].E2;
+        setPlaying(false);
+        markSel('layoutSel', 'layout', S.layout); $('viewGrid').className = 'layout-' + S.layout;
+        panes.forEach((p, i) => { p.select.value = PANE0[i]; p.select.dispatchEvent(new Event('change')); });
+        markSel('hModeSel', 'hmode', 'E'); markSel('particleSel', 'particle', S.particle); markSel('fieldInSel', 'fieldin', S.fieldIn);
+        markSel('drvOnSel', 'on', '0'); markSel('drvRangeSel', 'range', S.drv.range); markSel('unitsSel', 'units', S.unitMode);
+        for (const [id, key] of [['trailsBtn', 'trails'], ['arcsBtn', 'arcs'], ['omegaBtn', 'omegaLbl'], ['projBtn', 'proj']]) $(id).classList.toggle('active-on', S[key]);
+        $('speedSlider').value = S.speedV;
+        hChanged();
+    }
+    let resetArmed = null;
+    $('resetAllBtn').addEventListener('click', () => {
+        const b = $('resetAllBtn');
+        if (!resetArmed){
+            b.innerHTML = '&#8634; CLICK AGAIN TO RESET'; b.classList.add('active-on');
+            resetArmed = setTimeout(() => { resetArmed = null; b.innerHTML = '&#8634; RESET TO DEFAULTS'; b.classList.remove('active-on'); }, 3000);
+            return;
+        }
+        clearTimeout(resetArmed); resetArmed = null; b.innerHTML = '&#8634; RESET TO DEFAULTS'; b.classList.remove('active-on');
+        resetAll();
+    });
     hChanged();
     requestAnimationFrame(frame);
 })();
